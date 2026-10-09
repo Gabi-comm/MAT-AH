@@ -150,3 +150,9 @@ def test_kilos_rejects_unknown_ids(demo, monkeypatch):
     dest = Path(p["plan"]["folder"])
     assert str(demo["root"]) in str(dest) and ".." not in dest.name
     kilos.decline(demo["con"], p["id"])
+
+
+def test_verifier_allows_numbers_from_the_question():
+    from backend.sagot import verify
+    assert verify("Chapter 1 says the deadline is October 24, 2026 [1].", SRC, "Ano ang chapter 1?")[0]
+    assert not verify("Chapter 2 says the deadline is October 24, 2026 [1].", SRC, "Ano ang chapter 1?")[0]

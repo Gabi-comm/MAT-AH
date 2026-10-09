@@ -52,7 +52,7 @@ def _sentences(text: str) -> list[str]:
     return [p.strip() for p in parts if p.strip()]
 
 
-def verify(answer: str, sources: list[dict]) -> tuple[bool, list[str]]:
+def verify(answer: str, sources: list[dict], question: str = "") -> tuple[bool, list[str]]:
     """Every [n] must exist; every number, amount and month in a sentence must appear in that sentence's cited chunks."""
     problems = []
     n = len(sources)
@@ -63,6 +63,7 @@ def verify(answer: str, sources: list[dict]) -> tuple[bool, list[str]]:
         if c < 1 or c > n:
             problems.append(f"citation [{c}] does not exist")
     texts = {i + 1: _fold(s["text"]) for i, s in enumerate(sources)}
+    asked = _nums_in(question)
     nums = {i: _nums_in(t) for i, t in texts.items()}
     last_cites: list[int] = []
     for sent in _sentences(answer):
@@ -76,7 +77,7 @@ def verify(answer: str, sources: list[dict]) -> tuple[bool, list[str]]:
         if not cites:
             problems.append(f"uncited figure in: {sent[:60]}")
             continue
-        pool_nums = set().union(*(nums[c] for c in cites))
+        pool_nums = set().union(*(nums[c] for c in cites)) | asked  # echoing the question is not inventing
         pool_text = " ".join(texts[c] for c in cites)
         for forms in claimed:
             if not (forms & pool_nums):
@@ -159,7 +160,7 @@ def answer(con, question: str) -> dict:
     if raw.strip().upper().startswith("INSUFFICIENT") or not raw.strip():
         ok, problems, status = False, ["model said INSUFFICIENT"], "insufficient"
     else:
-        ok, problems = verify(raw, sources)
+        ok, problems = verify(raw, sources, question)
         status = "grounded" if ok else "insufficient"
     timings["verify"] = round((time.perf_counter() - t2) * 1000, 1)
     if not ok:
