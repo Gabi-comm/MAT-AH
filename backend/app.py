@@ -12,9 +12,9 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import folders, hanap, kilos, linis, llm, sagot, scan, status
+from . import folders, hanap, kilos, linis, llm, media, sagot, scan, status, visual, winsearch
 from .chunk import name_words
-from .index import VECTORS, connect
+from .index import VECTORS, VISUAL, connect
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
 
@@ -31,6 +31,7 @@ def db():
 async def lifespan(app: FastAPI):
     con = connect()
     VECTORS.load(con)
+    VISUAL.load(con)
     con.close()
     threading.Thread(target=llm.warm, daemon=True).start()
     yield
@@ -71,6 +72,18 @@ def add_root(body: RootIn, con=Depends(db)):
     return folders.add_root(con, path)
 
 
+@app.post("/api/roots/computer")
+def add_computer(con=Depends(db)):
+    """'Search my whole computer': your user folder plus any other non-system drives."""
+    added = [folders.add_root(con, str(Path.home()))]
+    for d in folders.extra_drives():
+        try:
+            added.append(folders.add_root(con, d))
+        except ValueError:
+            pass
+    return {"added": added}
+
+
 @app.delete("/api/roots/{root_id}")
 def del_root(root_id: int, con=Depends(db)):
     folders.remove_root(con, root_id)
@@ -91,6 +104,12 @@ def start_index():
 
     threading.Thread(target=work, daemon=True).start()
     return {**scan.progress, "running": True}
+
+
+@app.post("/api/index/stop")
+def stop_index():
+    scan.progress["stop"] = True
+    return scan.progress
 
 
 @app.get("/api/index/status")
@@ -154,7 +173,7 @@ def file_raw(fid: int, con=Depends(db)):
 
 
 @app.get("/api/files/{fid}/thumb")
-def file_thumb(fid: int, page: int = 1, w: int = 360, con=Depends(db)):
+def file_thumb(fid: int, page: int = 1, w: int = 360, t: float = 1.0, con=Depends(db)):
     r, p = _file(con, fid)
     import io
     from PIL import Image
@@ -172,6 +191,10 @@ def file_thumb(fid: int, page: int = 1, w: int = 360, con=Depends(db)):
             buf = io.BytesIO()
             im.save(buf, "JPEG", quality=82)
         return Response(buf.getvalue(), media_type="image/jpeg", headers={"Cache-Control": "max-age=300"})
+    if r["kind"] == "video":
+        jpg = media.frame_at(p, t, w)
+        if jpg:
+            return Response(jpg, media_type="image/jpeg", headers={"Cache-Control": "max-age=300"})
     raise HTTPException(415, "No preview")
 
 
@@ -270,7 +293,9 @@ def ops(con=Depends(db)):
 
 @app.get("/api/status")
 def get_status(con=Depends(db)):
-    return {**status.snapshot(con), "indexing": scan.progress["running"]}
+    return {**status.snapshot(con), "indexing": scan.progress["running"], "index": scan.progress,
+            "visual": visual.status(), "media": media.status(), "windows_search": winsearch.status(),
+            "vision_model": llm.vision_model()}
 
 
 if WEB_DIST.exists():

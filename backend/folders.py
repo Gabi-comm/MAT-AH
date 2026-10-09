@@ -21,11 +21,36 @@ def add_root(con, path: str) -> dict:
 
 
 def remove_root(con, root_id: int) -> None:
-    from .index import delete_file_rows
-    for (fid,) in con.execute("SELECT id FROM files WHERE root_id=?", (root_id,)).fetchall():
-        delete_file_rows(con, fid)
+    """Forget a folder: bulk-delete its files, chunks and vectors (fast even for 100k+ files)."""
+    from .index import VECTORS, VISUAL
+    sub = "SELECT id FROM files WHERE root_id=?"
+    cids = [r[0] for r in con.execute(f"SELECT id FROM chunks WHERE file_id IN ({sub})", (root_id,))]
+    vids = [r[0] for r in con.execute(f"SELECT id FROM visual WHERE file_id IN ({sub})", (root_id,))]
+    con.execute("BEGIN")
+    con.execute(f"DELETE FROM chunks_fts WHERE chunk_id IN (SELECT id FROM chunks WHERE file_id IN ({sub}))", (root_id,))
+    con.execute(f"DELETE FROM vectors WHERE chunk_id IN (SELECT id FROM chunks WHERE file_id IN ({sub}))", (root_id,))
+    con.execute(f"DELETE FROM chunks WHERE file_id IN ({sub})", (root_id,))
+    con.execute(f"DELETE FROM visual WHERE file_id IN ({sub})", (root_id,))
     con.execute("DELETE FROM files WHERE root_id=?", (root_id,))
     con.execute("DELETE FROM roots WHERE id=?", (root_id,))
+    con.execute("COMMIT")
+    VECTORS.remove(cids)
+    VISUAL.remove(vids)
+
+
+def extra_drives() -> list[str]:
+    """Fixed drives other than the Windows drive (D:, E: ...)."""
+    import ctypes
+    import os
+    import string
+    system = os.environ.get("SystemDrive", "C:").upper()
+    out = []
+    mask = ctypes.windll.kernel32.GetLogicalDrives()
+    for i, letter in enumerate(string.ascii_uppercase):
+        if mask & (1 << i) and f"{letter}:" != system:
+            if ctypes.windll.kernel32.GetDriveTypeW(f"{letter}:\\") == 3:  # DRIVE_FIXED
+                out.append(f"{letter}:\\")
+    return out
 
 
 def guard(con, path: str | Path) -> Path:

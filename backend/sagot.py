@@ -87,12 +87,41 @@ def verify(answer: str, sources: list[dict]) -> tuple[bool, list[str]]:
     return (not problems), problems
 
 
+def where(loc: dict, kind: str) -> str:
+    if "page" in loc:
+        return f"page {loc['page']}"
+    if "slide" in loc:
+        return f"slide {loc['slide']}"
+    if "t" in loc:
+        m, sec = divmod(int(loc["t"]), 60)
+        return f"{'speech' if kind == 'audio' or 'end' in loc else 'video'} at {m}:{sec:02d}"
+    if loc.get("caption"):
+        return "image description"
+    return "image text" if kind == "image" else "file"
+
+
+def _image_bytes(sources: list[dict]) -> list[bytes]:
+    """The top image source, downscaled, so a vision model can look at it while answering."""
+    import io
+    from PIL import Image
+    for s in sources[:3]:
+        if s["file"]["kind"] == "image":
+            try:
+                with Image.open(s["file"]["path"]) as im:
+                    im = im.convert("RGB")
+                    im.thumbnail((1024, 1024))
+                    buf = io.BytesIO()
+                    im.save(buf, "JPEG", quality=85)
+                return [buf.getvalue()]
+            except OSError:
+                return []
+    return []
+
+
 def _source_block(sources: list[dict]) -> str:
     out = []
     for i, s in enumerate(sources, start=1):
-        loc = s["locator"]
-        where = f"page {loc['page']}" if "page" in loc else f"slide {loc['slide']}" if "slide" in loc else "file"
-        out.append(f"[{i}] {s['file']['name']} ({where}):\n{s['text'][:1500]}")
+        out.append(f"[{i}] {s['file']['name']} ({where(s['locator'], s['file']['kind'])}):\n{s['text'][:1500]}")
     return "\n\n".join(out)
 
 
@@ -109,7 +138,7 @@ def answer(con, question: str) -> dict:
     timings["retrieve"] = round((time.perf_counter() - t0) * 1000 - timings.get("parse", 0), 1)
     pub = [_public(s, i) for i, s in enumerate(sources, start=1)]
     base = {"question": question, "sources": pub, "timings": timings, "model": llm.chat_model(),
-            "search_mode": res["mode"]}
+            "search_mode": res["mode"], "read_now": res.get("read_now", [])}
     if not llm.available():
         return {**base, "status": "offline", "answer": None,
                 "message": "Local AI is not running — showing the best matching sources instead."}
@@ -117,7 +146,13 @@ def answer(con, question: str) -> dict:
         return {**base, "status": "insufficient", "answer": None, "message": INSUFFICIENT_MSG, "problems": ["no sources"]}
 
     t1 = time.perf_counter()
-    raw = llm.chat(SYSTEM, f"Sources:\n\n{_source_block(sources)}\n\nQuestion: {question}", temperature=0.1)
+    images = _image_bytes(sources) if llm.vision_model() else []
+    if images:
+        base["model"] = llm.vision_model()
+    system = SYSTEM + ("\nThe attached image is the first image source; state only what it visibly shows."
+                       if images else "")
+    raw = llm.chat(system, f"Sources:\n\n{_source_block(sources)}\n\nQuestion: {question}", temperature=0.1,
+                   images=images)
     timings["generate"] = round((time.perf_counter() - t1) * 1000, 1)
 
     t2 = time.perf_counter()

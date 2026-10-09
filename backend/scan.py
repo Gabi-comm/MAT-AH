@@ -9,6 +9,7 @@
 Search and Sagot work during every phase; Sagot also reads a not-yet-read file on demand."""
 import json
 import os
+import queue
 import stat
 import threading
 import time
@@ -188,11 +189,16 @@ def _store_visual(con, fid: int, items: list[tuple[float | None, object]]) -> No
 
 def read_file(con, fid: int, embed: bool | None = None) -> bool:
     """Open one queued file and index its content. Safe to call on demand (Sagot) or from the indexer."""
-    row = con.execute("SELECT * FROM files WHERE id=?", (fid,)).fetchone()
-    if not row or row["status"] not in ("queued", "error"):
+    with _write_lock:  # claim it, so the indexer and the priority reader never read the same file twice
+        claimed = con.execute("UPDATE files SET status='reading' WHERE id=? AND status IN ('queued','error')",
+                              (fid,)).rowcount
+    if not claimed:
         return False
+    row = con.execute("SELECT * FROM files WHERE id=?", (fid,)).fetchone()
     p = Path(row["path"])
     if not p.exists():
+        with _write_lock:
+            con.execute("UPDATE files SET status='error' WHERE id=?", (fid,))
         return False
     kind = row["kind"]
     embed = llm.embed_available() if embed is None else embed
@@ -254,6 +260,29 @@ def ensure_listed(con, path: str) -> int | None:
     st = p.stat()
     with _write_lock:
         return upsert_listing(con, r["id"], p, st.st_size, st.st_mtime, None)
+
+
+_prio: "queue.Queue[int]" = queue.Queue()
+_prio_thread: list[threading.Thread] = []
+
+
+def prioritize(fids: list[int]) -> None:
+    """Read these files next, on a side worker, so a search result fills in with its content."""
+    if not _prio_thread:
+        def worker():
+            from .index import connect
+            con = connect()
+            while True:
+                fid = _prio.get()
+                try:
+                    read_file(con, fid)
+                except Exception as e:
+                    _err(f"priority read {fid}: {e}")
+        t = threading.Thread(target=worker, daemon=True, name="matah-priority-reader")
+        t.start()
+        _prio_thread.append(t)
+    for f in fids:
+        _prio.put(f)
 
 
 def read_queue(con) -> None:
@@ -368,6 +397,8 @@ def run(con) -> dict:
     try:
         progress.update(running=True, stop=False, errors=[], started=time.time(), finished=0.0, embedded=0,
                         seen=0, described=0, done=0, total=0)
+        with _write_lock:  # a read cut off by a crash or restart goes back in the queue
+            con.execute("UPDATE files SET status='queued' WHERE status='reading'")
         steps = [list_files, read_queue, backfill_visual, backfill_embeddings, describe_images]
         for step in steps:
             if progress["stop"]:

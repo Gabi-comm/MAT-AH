@@ -5,8 +5,8 @@ import time
 import unicodedata
 from datetime import datetime, timedelta
 
-from . import llm
-from .index import VECTORS
+from . import llm, visual, winsearch
+from .index import VECTORS, VISUAL
 
 KIND_WORDS = {
     "image": ["screenshot", "screenshots", "ss", "screencap", "litrato", "larawan", "picture", "pictures", "pic",
@@ -15,6 +15,9 @@ KIND_WORDS = {
     "pptx": ["slides", "slide", "ppt", "pptx", "presentation", "deck", "powerpoint"],
     "docx": ["docx", "word", "doc"],
     "text": ["txt", "markdown"],
+    "sheet": ["excel", "xlsx", "spreadsheet"],
+    "video": ["video", "videos", "vid", "bidyo", "mp4", "recording", "clip", "clips"],
+    "audio": ["audio", "voice", "mp3", "song", "kanta", "podcast"],
 }
 WORD_TO_KIND = {w: k for k, ws in KIND_WORDS.items() for w in ws}
 
@@ -202,41 +205,109 @@ def _snippet(text: str, needles: list[str], width: int = 220) -> str:
     return ("…" if start > 0 else "") + s + ("…" if start + width < len(text) else "")
 
 
+# Visual (CLIP) cosine floors: below these a "match" is noise. Calibrated in eval/visual_check.
+VIS_MIN_VISUAL_QUERY = 0.20  # the query asks for a picture/video ("litrato ng aso")
+VIS_MIN_ANY_QUERY = 0.27     # any other query: only strong visual matches join in
+WEIGHTS = {"keyword": 1.0, "meaning": 1.0, "visual": 1.0, "windows": 0.8}
+WHY = {"keyword": "words", "meaning": "meaning", "visual": "looks like", "windows": "Windows index"}
+
+
+def _file_ranking(con, chunk_ids: list[int]) -> list[tuple[int, int]]:
+    """Chunk ranking -> file ranking, keeping each file's best chunk: [(file_id, chunk_id)]."""
+    if not chunk_ids:
+        return []
+    q = ",".join("?" * len(chunk_ids))
+    owner = {r[0]: r[1] for r in con.execute(f"SELECT id, file_id FROM chunks WHERE id IN ({q})", chunk_ids)}
+    seen, out = set(), []
+    for cid in chunk_ids:
+        fid = owner.get(cid)
+        if fid is not None and fid not in seen:
+            seen.add(fid)
+            out.append((fid, cid))
+    return out
+
+
+def _visual_ranking(con, text: str, floor: float, k: int = 80) -> list[tuple[int, None, dict]]:
+    """CLIP text->image: [(file_id, None, {"t": best frame time, "visual": score})], best frame per file."""
+    if not len(VISUAL) or not visual.ready():
+        return []
+    qv = visual.embed_text([text])[0]
+    vis = [(vid, s) for vid, s in VISUAL.search(qv, k) if s >= floor]
+    if not vis:
+        return []
+    q = ",".join("?" * len(vis))
+    rows = {r[0]: (r[1], r[2]) for r in con.execute(f"SELECT id, file_id, t FROM visual WHERE id IN ({q})",
+                                                    [v[0] for v in vis])}
+    seen, out = set(), []
+    for vid, s in vis:
+        fid, t = rows.get(vid, (None, None))
+        if fid is None or fid in seen:
+            continue
+        seen.add(fid)
+        loc = {"visual": round(s, 3)}
+        if t is not None:
+            loc["t"] = t
+        out.append((fid, None, loc))
+    return out
+
+
 def search(con, q: str, limit: int = 20, mode: str = "hybrid", use_llm: bool = True) -> dict:
-    timings = {}
+    """mode 'hybrid' fuses every source; 'keyword' is FTS only (the eval baseline)."""
+    timings: dict[str, float] = {}
     t0 = time.perf_counter()
     p = parse(q, use_llm=use_llm)
     timings["parse"] = round((time.perf_counter() - t0) * 1000, 1)
-
     t1 = time.perf_counter()
-    fts_ids = _fts(con, fts_query(p))
-    vec_ids: list[int] = []
-    vector_used = False
-    if mode == "hybrid" and len(VECTORS) and llm.embed_available():
+    lists: dict[str, list] = {"keyword": [(f, c, {}) for f, c in _file_ranking(con, _fts(con, fts_query(p)))]}
+    wants_visual = any(k in p["kinds"] for k in ("image", "video"))
+    if mode == "hybrid":
+        if len(VECTORS) and llm.embed_available():
+            try:
+                qv = llm.embed([q if len(q) < 300 else " ".join(p["terms"])], "query")[0]
+                ids = [cid for cid, s in VECTORS.search(qv, 60) if s > 0.2]
+                lists["meaning"] = [(f, c, {}) for f, c in _file_ranking(con, ids)]
+            except Exception:
+                pass
         try:
-            sem = " ".join(p["terms"] + p["phrases"]) or q
-            qv = llm.embed([q if len(q) < 300 else sem], "query")[0]
-            vec_ids = [cid for cid, s in VECTORS.search(qv, 50) if s > 0.2]
-            vector_used = True
+            clip_text = " ".join(p["terms"] + p["phrases"]) or q
+            lists["visual"] = _visual_ranking(con, clip_text,
+                                              VIS_MIN_VISUAL_QUERY if wants_visual else VIS_MIN_ANY_QUERY)
         except Exception:
-            vec_ids = []
-    fused: dict[int, float] = {}
-    why: dict[int, set] = {}
-    for rank, cid in enumerate(fts_ids):
-        fused[cid] = fused.get(cid, 0) + 1 / (RRF_K + rank + 1)
-        why.setdefault(cid, set()).add("keyword")
-    for rank, cid in enumerate(vec_ids):
-        fused[cid] = fused.get(cid, 0) + 1 / (RRF_K + rank + 1)
-        why.setdefault(cid, set()).add("meaning")
+            pass
+        if winsearch.available():
+            from .scan import ensure_listed
+            terms = p["terms"] + p["phrases"] + [str(int(a)) for a in p["amounts"]]
+            scopes = [r[0] for r in con.execute("SELECT path FROM roots")]
+            out = []
+            for path, _rank in winsearch.search(terms, scopes, 30):
+                try:
+                    fid = ensure_listed(con, path)
+                except Exception:
+                    fid = None
+                if fid:
+                    out.append((fid, None, {}))
+            lists["windows"] = out
+    lists = {k: v for k, v in lists.items() if v}
+    timings["retrieve"] = round((time.perf_counter() - t1) * 1000, 1)
 
-    hits = _group(con, fused, why, p)
-    # Filters are hard unless they would empty the list; then they're reported as relaxed.
+    # Reciprocal rank fusion over files; each file keeps its best chunk and, for video, its best moment.
+    score: dict[int, float] = {}
+    why: dict[int, set] = {}
+    best: dict[int, tuple[int | None, dict]] = {}
+    for src, ranking in lists.items():
+        w = WEIGHTS[src] * (1.4 if src == "visual" and wants_visual else 1.0)
+        for rank, (fid, cid, loc) in enumerate(ranking):
+            score[fid] = score.get(fid, 0) + w / (RRF_K + rank + 1)
+            why.setdefault(fid, set()).add(WHY[src])
+            cur_c, cur_loc = best.get(fid, (None, {}))
+            best[fid] = (cur_c if cur_c is not None else cid, {**loc, **cur_loc} if cur_c is not None else {**cur_loc, **loc})
+    hits = _build_hits(con, score, why, best, p)
+
     relaxed = []
     filtered = hits
     if p["kinds"]:
         f2 = [h for h in filtered if h["file"]["kind"] in p["kinds"]]
         if not f2 and hits:
-            # nothing matched the words; fall back to all files of that kind in the date window
             f2 = _kind_browse(con, p)
         filtered = f2 if f2 else filtered
         if not f2:
@@ -247,14 +318,18 @@ def search(con, q: str, limit: int = 20, mode: str = "hybrid", use_llm: bool = T
             filtered = f3
         else:
             relaxed.append("date")
-    timings["retrieve"] = round((time.perf_counter() - t1) * 1000, 1)
+    queued = [h["file"]["id"] for h in filtered[:10] if h["file"]["status"] == "queued"]
+    if queued:
+        from .scan import prioritize
+        prioritize(queued)  # read these next, so the following search shows what's inside them
     return {"query": p, "hits": filtered[:limit], "timings": timings, "relaxed": relaxed,
-            "mode": "hybrid" if vector_used else "keyword", "llm_model": llm.chat_model() if p["llm"] else None}
+            "mode": "hybrid" if len(lists) > 1 else "keyword", "sources": sorted(lists),
+            "llm_model": llm.chat_model() if p["llm"] else None}
 
 
 def _kind_browse(con, p) -> list[dict]:
-    rows = con.execute(f"SELECT * FROM files WHERE kind IN ({','.join('?' * len(p['kinds']))}) ORDER BY mtime DESC LIMIT 50",
-                       p["kinds"]).fetchall()
+    rows = con.execute(f"SELECT * FROM files WHERE kind IN ({','.join('?' * len(p['kinds']))}) "
+                       "ORDER BY mtime DESC LIMIT 50", p["kinds"]).fetchall()
     out = []
     for f in rows:
         c = con.execute("SELECT id, text, locator FROM chunks WHERE file_id=? ORDER BY id LIMIT 1", (f["id"],)).fetchone()
@@ -262,65 +337,72 @@ def _kind_browse(con, p) -> list[dict]:
     return out
 
 
-def _hit(f, c, score, why, p) -> dict:
+def _hit(f, c, score, why, p, loc_extra: dict | None = None) -> dict:
     needles = p["terms"] + [fold(x) for x in p["phrases"]] + [a for v in p["amounts"] for a in amount_variants(v)]
-    needles += [f"{int(v):,}" for v in p["amounts"] if v >= 1000] + [SYN for t in p["terms"] for SYN in SYNONYMS.get(t, [])]
+    needles += [f"{int(v):,}" for v in p["amounts"] if v >= 1000] + [s for t in p["terms"] for s in SYNONYMS.get(t, [])]
+    loc = json.loads(c["locator"]) if c else {}
+    if loc_extra:
+        loc = {**loc, **loc_extra}
     return {
-        "file": {k: f[k] for k in ("id", "path", "name", "ext", "kind", "size", "mtime", "taken_at")},
+        "file": {k: f[k] for k in ("id", "path", "name", "ext", "kind", "size", "mtime", "taken_at", "status")},
         "chunk_id": c["id"] if c else None,
-        "locator": json.loads(c["locator"]) if c else {},
-        "snippet": _snippet(c["text"], needles) if c else "",
+        "locator": loc,
+        "snippet": _snippet(c["text"], needles) if c and c["text"] else "",
         "score": round(score, 5),
         "why": sorted(why),
         "highlight": needles,
     }
 
 
-def _group(con, fused: dict[int, float], why: dict[int, set], p: dict) -> list[dict]:
-    if not fused:
+def _build_hits(con, score, why, best, p) -> list[dict]:
+    if not score:
         return []
-    ids = list(fused)
-    q = ",".join("?" * len(ids))
-    rows = con.execute(f"SELECT c.id, c.text, c.locator, c.file_id FROM chunks c WHERE c.id IN ({q})", ids).fetchall()
-    by_file: dict[int, list] = {}
-    for r in rows:
-        by_file.setdefault(r["file_id"], []).append(r)
-    if not by_file:
-        return []
-    files = {f["id"]: f for f in con.execute(
-        f"SELECT * FROM files WHERE id IN ({','.join('?' * len(by_file))})", list(by_file)).fetchall()}
+    q = ",".join("?" * len(score))
+    files = {f["id"]: f for f in con.execute(f"SELECT * FROM files WHERE id IN ({q})", list(score))}
     hits = []
-    for fid, chunks in by_file.items():
+    for fid, s in score.items():
         f = files.get(fid)
         if not f:
             continue
-        chunks.sort(key=lambda r: -fused[r["id"]])
-        best = chunks[0]
-        # File score: best chunk plus a small bonus for additional matching chunks.
-        score = fused[best["id"]] + 0.15 * sum(fused[r["id"]] for r in chunks[1:4])
-        # Amount boost: exact amounts are strong evidence for receipts.
-        if p["amounts"]:
-            norm = re.sub(r"[,\s]", "", best["text"])
+        cid, loc = best.get(fid, (None, {}))
+        if cid is not None:
+            c = con.execute("SELECT id, text, locator FROM chunks WHERE id=?", (cid,)).fetchone()
+        else:  # found by sight or by the Windows index: show its first chunk
+            c = con.execute("SELECT id, text, locator FROM chunks WHERE file_id=? ORDER BY id LIMIT 1", (fid,)).fetchone()
+        if p["amounts"] and c:  # exact amounts are strong evidence for receipts
+            norm = re.sub(r"[,\s.]", "", c["text"])
             if any(str(int(v)) in norm for v in p["amounts"]):
-                score *= 1.5
-        w = set()
-        for r in chunks:
-            w |= why.get(r["id"], set())
-        hits.append(_hit(f, best, score, w, p))
+                s *= 1.5
+        hits.append(_hit(f, c, s, why.get(fid, set()), p, loc))
     hits.sort(key=lambda h: -h["score"])
     return hits
 
 
+READ_NOW_KINDS = {"pdf", "docx", "pptx", "sheet", "text", "image"}
+
+
 def top_chunks(con, q: str, k: int = 6) -> tuple[list[dict], dict]:
-    """Best chunks across files for Sagot: the best chunk of each top file, then runners-up."""
+    """Best content chunks for Sagot. Files MAT-AH hasn't read yet are read right now (scan on demand)."""
     res = search(con, q, limit=12)
+    unread = [h for h in res["hits"][:6] if h["file"]["status"] == "queued" and h["file"]["kind"] in READ_NOW_KINDS]
+    if unread:
+        from .scan import read_file
+        t = time.perf_counter()
+        for h in unread[:4]:
+            read_file(con, h["file"]["id"])
+        res = search(con, q, limit=12)
+        res["timings"]["read_now"] = round((time.perf_counter() - t) * 1000, 1)
+        res["read_now"] = [h["file"]["name"] for h in unread[:4]]
     out, seen = [], set()
     for h in res["hits"]:
-        if h["chunk_id"] and h["chunk_id"] not in seen:
-            seen.add(h["chunk_id"])
-            out.append(h)
+        if not h["chunk_id"] or h["chunk_id"] in seen:
+            continue
+        row = con.execute("SELECT text, locator FROM chunks WHERE id=?", (h["chunk_id"],)).fetchone()
+        if row["locator"] == "{}" and h["file"]["kind"] != "text":  # only a file name, nothing to quote
+            continue
+        seen.add(h["chunk_id"])
+        h["text"] = row["text"]
+        out.append(h)
         if len(out) >= k:
             break
-    for h in out:
-        h["text"] = con.execute("SELECT text FROM chunks WHERE id=?", (h["chunk_id"],)).fetchone()[0]
     return out, res

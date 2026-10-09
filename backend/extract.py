@@ -107,9 +107,7 @@ def extract_xlsx(path: Path) -> list[dict]:
             if cells:
                 rows.append(" | ".join(cells))
         if rows:
-            units.append({"text": f"[{ws.title}]
-" + "
-".join(rows), "locator": {"sheet": ws.title}})
+            units.append({"text": f"[{ws.title}]\n" + "\n".join(rows), "locator": {"sheet": ws.title}})
     wb.close()
     return units
 
