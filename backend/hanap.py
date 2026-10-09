@@ -32,6 +32,15 @@ SYNONYMS = {
     "pera": ["money", "amount"], "halaga": ["amount"], "grado": ["grades"], "marka": ["grades"],
     "takdang": ["assignment"], "aralin": ["lesson"], "pagsusulit": ["exam", "quiz"], "exam": ["pagsusulit"],
     "gcash": ["e-wallet"], "ewallet": ["e-wallet"], "padala": ["transfer", "sent"],
+    "meme": ["memes"], "memes": ["meme"],
+}
+
+# CLIP understands a picture better from a short description than from the raw keyword.
+CLIP_HINT = {
+    "meme": "internet meme", "memes": "internet meme",
+    "id": "identification card", "ids": "identification card",
+    "receipt": "paper receipt", "resibo": "paper receipt",
+    "screenshot": "screenshot of a phone or computer screen",
 }
 
 STOP = set("""yung ung iyong iyon yun ang ng nang sa na mga ko ni si kay tungkol ano anong saan nasaan asan nga po
@@ -276,9 +285,11 @@ def search(con, q: str, limit: int = 20, mode: str = "hybrid", use_llm: bool = T
             text = q if len(q) < 300 else " ".join(p["terms"])
             futures["meaning"] = _POOL.submit(_timed, lambda: VECTORS.search(llm.embed([text], "query")[0], 60))
         if len(VISUAL) and visual.ready():
-            clip_text = " ".join(p["terms"] + p["phrases"]) or q
-            z = VIS_Z_VISUAL_QUERY if wants_visual else VIS_Z_ANY_QUERY
-            futures["visual"] = _POOL.submit(_timed, lambda: VISUAL.search(visual.embed_text([clip_text])[0], 80, min_z=z))
+            hinted = [CLIP_HINT.get(t, t) for t in p["terms"]]
+            clip_text = "a photo of " + " ".join(hinted + p["phrases"]) if hinted or p["phrases"] else q
+            # Concept queries ("memes", "school id") should match pictures even when the filename has no such word.
+            z = VIS_Z_VISUAL_QUERY if (wants_visual or p["terms"]) else VIS_Z_ANY_QUERY
+            futures["visual"] = _POOL.submit(_timed, lambda: VISUAL.search(visual.embed_text([clip_text])[0], 200, min_z=z))
         if winsearch.available():
             terms = p["terms"] + p["phrases"] + [str(int(a)) for a in p["amounts"]]
             scopes = [r[0] for r in con.execute("SELECT path FROM roots")]
@@ -316,7 +327,8 @@ def search(con, q: str, limit: int = 20, mode: str = "hybrid", use_llm: bool = T
     why: dict[int, set] = {}
     best: dict[int, tuple[int | None, dict]] = {}
     for src, ranking in lists.items():
-        w = WEIGHTS[src] * (1.4 if src == "visual" and wants_visual else 1.0)
+        concept = bool(p["terms"]) and not p["amounts"]
+        w = WEIGHTS[src] * (1.8 if src == "visual" and (wants_visual or concept) else 1.0)
         for rank, (fid, cid, loc) in enumerate(ranking):
             score[fid] = score.get(fid, 0) + w / (RRF_K + rank + 1)
             why.setdefault(fid, set()).add(WHY[src])

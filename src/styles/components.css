@@ -999,6 +999,49 @@ html.theme-vt::view-transition-new(root) {
   animation: indeterminate 1300ms var(--ease-aperture) infinite;
 }
 
+.linis-meter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.linis-meter .progress {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.linis-meter .progress > span {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.linis-meter .progress > span::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.38), transparent);
+  transform: translateX(-100%);
+  animation: progress-sheen 1600ms var(--ease-aperture) infinite;
+}
+
+.linis-meter-pct {
+  flex: none;
+  min-width: 3.6em;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  background: linear-gradient(90deg, var(--accent-primary), var(--c-orchid));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .empty {
   display: flex;
   flex-direction: column;

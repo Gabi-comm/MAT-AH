@@ -64,7 +64,7 @@ describe("Kilos approval", () => {
     render(<App backend={backend} startup={false} />);
     await userEvent.type(screen.getByLabelText("What should MAT-AH organize?"), "x");
     await userEvent.click(screen.getByRole("button", { name: "Make a plan" }));
-    await userEvent.click(await screen.findByRole("button", { name: /Huwag · Cancel/ }));
+    await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
     expect(backend.decline).toHaveBeenCalledWith(7);
     expect(await screen.findByText(/Cancelled · nothing changed/)).toBeInTheDocument();
     expect(irisState()).toBe("idle");

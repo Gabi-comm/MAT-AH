@@ -5,7 +5,7 @@ import { Icon } from "../../components/Icon";
 import { useTrackedRequest } from "../../hooks/useTrackedRequest";
 import { useBackend } from "../../services/BackendContext";
 import { folderOf, formatBytes, plural } from "../../services/normalize";
-import type { LinisReport, LinisRef, Proposal, RootFolder } from "../../services/types";
+import type { LinisProgress, LinisReport, LinisRef, Proposal, RootFolder } from "../../services/types";
 import { ProposalReview } from "../kilos/ProposalReview";
 
 type Tab = "dupes" | "zero" | "empty";
@@ -22,6 +22,7 @@ export function LinisPage() {
   const [err, setErr] = useState<string | null>(null);
   const [folder, setFolder] = useState("");
   const [roots, setRoots] = useState<RootFolder[]>([]);
+  const [meter, setMeter] = useState<LinisProgress>({ phase: "idle", done: 0, total: 0, listed: 0, percent: 0, run: 0 });
   // A folder name resolves inside the first authorized folder that is listed (same rule as the team's first UI).
   const target = () => {
     const t = folder.trim();
@@ -43,6 +44,27 @@ export function LinisPage() {
   useEffect(() => {
     run(undefined);
   }, [run]);
+
+  useEffect(() => {
+    if (scan.status !== "loading") return;
+    let cancel = false;
+    const pull = () => {
+      backend.linisProgress().then((p) => {
+        if (cancel) return;
+        setMeter((prev) => {
+          // Same scan never moves backwards. A new run (refresh) may start again at 0.
+          if (p.run === prev.run && p.percent < prev.percent) return prev;
+          return p;
+        });
+      }, () => {});
+    };
+    pull();
+    const id = window.setInterval(pull, 400);
+    return () => {
+      cancel = true;
+      window.clearInterval(id);
+    };
+  }, [scan.status, backend]);
 
   const r = scan.data;
 
@@ -116,10 +138,19 @@ export function LinisPage() {
             <InlineIris state="searching" size={52} />
             <div className="stack gap-1">
               <strong>Checking your folders…</strong>
-              <span className="subtle" style={{ fontSize: 14 }}>Comparing file contents to find exact duplicates, empty files and empty folders.</span>
+              <span className="subtle" style={{ fontSize: 14 }}>
+                {meter.phase === "comparing"
+                  ? `Reading duplicate contents · ${formatBytes(meter.done)} of ${formatBytes(meter.total)}. A file that will not open is skipped.`
+                  : meter.listed > 0
+                    ? `Counting files · ${meter.listed.toLocaleString()}`
+                    : "Comparing file contents to find exact duplicates, empty files and empty folders."}
+              </span>
             </div>
           </div>
-          <Progress label="Scanning for clutter" />
+          <div className="linis-meter">
+            <Progress done={Math.round(meter.percent * 10)} total={1000} label={`Cleanup progress, ${meter.percent} percent`} />
+            <span className="linis-meter-pct">{meter.percent.toFixed(1)}%</span>
+          </div>
         </div>
       )}
       {scan.status === "error" && <ErrorState error={scan.error} onRetry={rescan} />}

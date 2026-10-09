@@ -71,6 +71,7 @@ export interface SearchResponse {
   timings: Record<string, number>;
   relaxed: string[];
   mode: "hybrid" | "keyword";
+  sources?: string[];
   llm_model?: string | null;
 }
 
@@ -210,6 +211,16 @@ export interface ModelPull {
   completed: number;
   total: number;
   error: string | null;
+}
+
+/** GET /api/linis/progress — polled while a scan is running. */
+export interface LinisProgress {
+  phase: "idle" | "listing" | "comparing" | "done";
+  done: number;
+  total: number;
+  listed: number;
+  percent: number;
+  run: number;
 }
 
 /** GET /api/linis */

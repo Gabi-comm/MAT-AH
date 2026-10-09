@@ -8,8 +8,12 @@ Set-Location $PSScriptRoot
 
 if (-not (Test-Path .venv)) {
     Write-Host 'Creating Python environment...'
-    py -3.13 -m venv .venv
-    if (-not $?) { py -3 -m venv .venv }
+    try {
+        py -3.13 -m venv .venv
+    } catch {
+        Write-Host 'Python 3.13 not found; using default Python 3...'
+        py -3 -m venv .venv
+    }
     .\.venv\Scripts\python -m pip install --upgrade pip
     .\.venv\Scripts\python -m pip install -r requirements.txt
 }

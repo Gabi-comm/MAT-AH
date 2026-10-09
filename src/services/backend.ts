@@ -9,6 +9,7 @@ import type {
   AskResponse,
   FileDetail,
   IndexProgress,
+  LinisProgress,
   LinisReport,
   LlmConfig,
   LlmInfo,
@@ -34,7 +35,7 @@ export interface Backend {
   startIndex(): Promise<IndexProgress>;
   stopIndex(): Promise<IndexProgress>;
   indexStatus(signal?: AbortSignal): Promise<IndexProgress>;
-  search(q: string, signal?: AbortSignal): Promise<SearchResponse>;
+  search(q: string, signal?: AbortSignal, limit?: number): Promise<SearchResponse>;
   ask(q: string, signal?: AbortSignal): Promise<AskResponse>;
   file(id: number, chunk?: number | null, signal?: AbortSignal): Promise<FileDetail>;
   thumbUrl(id: number, page?: number, w?: number, t?: number): string;
@@ -43,6 +44,7 @@ export interface Backend {
   revealFile(id: number): Promise<{ ok: boolean }>;
   addNote(id: number, text: string): Promise<FileDetail>;
   linis(path?: string, signal?: AbortSignal): Promise<LinisReport>;
+  linisProgress(signal?: AbortSignal): Promise<LinisProgress>;
   propose(requestText: string, signal?: AbortSignal): Promise<Proposal>;
   proposeCleanup(fileIds: number[], folders: string[]): Promise<Proposal>;
   approve(pid: number, selected?: number[] | null): Promise<Proposal>;
@@ -64,7 +66,7 @@ export const realBackend: Backend = {
   startIndex: () => request("/api/index", { method: "POST" }),
   stopIndex: () => request("/api/index/stop", { method: "POST" }),
   indexStatus: (signal) => request("/api/index/status", { signal }),
-  search: (q, signal) => request("/api/search", { params: { q, mode: "hybrid", limit: 20 }, signal }),
+  search: (q, signal, limit = 60) => request("/api/search", { params: { q, mode: "hybrid", limit }, signal }),
   ask: (q, signal) => request("/api/ask", { method: "POST", body: { q }, signal }),
   file: (id, chunk, signal) => request(`/api/files/${id}`, { params: { chunk: chunk ?? undefined }, signal }),
   thumbUrl: (id, page = 1, w = 360, t = 1) => apiUrl(`/api/files/${id}/thumb`, { page, w, t }),
@@ -73,6 +75,7 @@ export const realBackend: Backend = {
   revealFile: (id) => request(`/api/files/${id}/reveal`, { method: "POST" }),
   addNote: (id, text) => request(`/api/files/${id}/notes`, { method: "POST", body: { text } }),
   linis: (path, signal) => request("/api/linis", { params: { path }, signal }),
+  linisProgress: (signal) => request("/api/linis/progress", { signal }),
   propose: (requestText, signal) => request("/api/kilos/propose", { method: "POST", body: { request: requestText }, signal }),
   proposeCleanup: (file_ids, folders) => request("/api/kilos/cleanup", { method: "POST", body: { file_ids, folders } }),
   approve: (pid, selected) =>

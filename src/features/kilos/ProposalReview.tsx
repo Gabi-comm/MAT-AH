@@ -189,7 +189,7 @@ export function ProposalReview({ proposal, onChange }: { proposal: Proposal; onC
             </span>
           </div>
           <button className="btn btn-line" onClick={decline} disabled={!!busy}>
-            {busy === "decline" ? "Cancelling…" : "Huwag · Cancel"}
+            {busy === "decline" ? "Cancelling…" : "Cancel"}
           </button>
           <button className="btn btn-primary" onClick={() => setConfirm(true)} disabled={!!busy || count === 0}>
             {busy === "approve" ? "Running…" : `Review and approve ${count}`}

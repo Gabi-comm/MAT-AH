@@ -120,7 +120,7 @@ def index_status():
 
 # ---------- Hanap & Sagot ----------
 @app.get("/api/search")
-def do_search(q: str, mode: str = "hybrid", limit: int = 20, con=Depends(db)):
+def do_search(q: str, mode: str = "hybrid", limit: int = 60, con=Depends(db)):
     res = hanap.search(con, q, limit=limit, mode=mode)
     status.last_timings.clear()
     status.last_timings.update({"kind": "search", **res["timings"]})
@@ -239,9 +239,16 @@ def add_note(fid: int, body: NoteIn, con=Depends(db)):
 
 
 # ---------- Linis & Kilos ----------
+@app.get("/api/linis/progress")
+def linis_progress():
+    """Polled while /api/linis is still walking and hashing. In-memory only."""
+    return linis.progress()
+
+
 @app.get("/api/linis")
-def do_linis(path: str | None = None, con=Depends(db)):
-    return linis.scan(con, subpath=path)
+def do_linis(path: str | None = None):
+    # Own connection inside the scan thread. A second call joins the scan already running.
+    return linis.scan_shared(subpath=path)
 
 
 class ProposeIn(BaseModel):

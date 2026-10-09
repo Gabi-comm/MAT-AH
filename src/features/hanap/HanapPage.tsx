@@ -19,9 +19,9 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
   const [selected, setSelected] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const search = useTrackedRequest<SearchResponse, [string]>(
+  const search = useTrackedRequest<SearchResponse, [string, number?]>(
     "search",
-    (signal, query) => backend.search(query, signal),
+    (signal, query, limit) => backend.search(query, signal, limit),
     (r) => (r.hits.length > 0 ? "hits" : "empty"),
   );
   const { run, cancel, reset } = search;
@@ -30,7 +30,7 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
     setDraft(q);
     setKind("all");
     setSelected(null);
-    if (q.trim()) run(q.trim());
+    if (q.trim()) run(q.trim(), 60);
     else reset();
   }, [q, run, reset]);
 
@@ -42,7 +42,7 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
     e.preventDefault();
     const t = draft.trim();
     if (!t) return;
-    if (t === q) run(t);
+    if (t === q) run(t, 60);
     else navigate("hanap", { q: t });
   }
 
@@ -57,7 +57,7 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
   // Meaning-only hits far below the best one stay available but folded away (kept from the team's first UI).
   const top = hits[0]?.score ?? 0;
   const isWeak = (h: SearchHit, i: number) =>
-    i >= 3 && !h.why.some((w) => w === "words" || w === "keyword") && h.score < top * 0.45;
+    i >= 3 && !h.why.some((w) => w === "words" || w === "keyword" || w === "looks like") && h.score < top * 0.45;
   const strong = hits.filter((h, i) => !isWeak(h, i));
   const weak = hits.filter((h, i) => isWeak(h, i));
 
@@ -129,7 +129,11 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
               {t}
             </span>
           ))}
-          {data && <span className="mono subtle" style={{ fontSize: 12 }}>{data.mode === "hybrid" ? "words + meaning" : "words only"}</span>}
+          {data && (
+            <span className="mono subtle" style={{ fontSize: 12 }}>
+              {data.sources?.includes("visual") ? "words + pictures" : data.mode === "hybrid" ? "words + meaning" : "words only"}
+            </span>
+          )}
         </div>
       )}
 
@@ -206,6 +210,11 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
               />
             ))}
           </div>
+          {data.hits.length >= 60 && (
+            <button className="btn btn-line" style={{ alignSelf: "flex-start" }} onClick={() => run(data.query.raw, 200)} disabled={loading}>
+              Show more matches
+            </button>
+          )}
           {weak.length > 0 && (
             <details className="weaker">
               <summary>

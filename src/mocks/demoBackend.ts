@@ -274,6 +274,7 @@ export const demoBackend: Backend = {
       empty_folders: [{ path: `${ROOT}\\Downloads\\New folder (3)`, name: "New folder (3)" }],
       reclaimable_bytes: 36_412_000,
     }), signal),
+  linisProgress: () => wait(40, () => ({ phase: "comparing" as const, done: 40, total: 100, listed: 128, percent: 40, run: 1 })),
   propose: (requestText, signal) =>
     wait(1300, () => {
       const ids = [5, 6, 7, 8, 2];

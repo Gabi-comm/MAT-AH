@@ -58,6 +58,7 @@ export function fakeBackend(over: Partial<Backend> = {}): Backend {
     revealFile: vi.fn(async () => ({ ok: true })),
     addNote: vi.fn(never),
     linis: vi.fn(never),
+    linisProgress: vi.fn(async () => ({ phase: "listing" as const, done: 0, total: 0, listed: 0, percent: 0, run: 1 })),
     propose: vi.fn(never),
     proposeCleanup: vi.fn(never),
     approve: vi.fn(never),
