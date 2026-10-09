@@ -10,7 +10,7 @@ export function useFileActions() {
     async (id: number, name: string) => {
       try {
         await backend.openFile(id);
-        toast(backend.isDemo ? `Demo: would open ${name}` : `Binuksan ang ${name}`);
+        toast(backend.isDemo ? `Demo: would open ${name}` : `Opened ${name}`);
       } catch (e) {
         toast((e as Error).message, "err");
       }
@@ -21,7 +21,7 @@ export function useFileActions() {
     async (id: number, name: string) => {
       try {
         await backend.revealFile(id);
-        toast(backend.isDemo ? `Demo: would show ${name} in its folder` : `Ipinakita sa File Explorer`);
+        toast(backend.isDemo ? `Demo: would show ${name} in its folder` : "Shown in File Explorer");
       } catch (e) {
         toast((e as Error).message, "err");
       }

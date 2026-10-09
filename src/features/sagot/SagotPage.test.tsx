@@ -26,9 +26,9 @@ describe("Sagot", () => {
   });
 
   it("insufficient evidence shows no generated answer", async () => {
-    const res: AskResponse = { ...base, question: "q", status: "insufficient", answer: null, message: "Kulang ang ebidensya.", sources: [src(1, "Near.pdf", "close")] };
+    const res: AskResponse = { ...base, question: "q", status: "insufficient", answer: null, message: "Not enough evidence.", sources: [src(1, "Near.pdf", "close")] };
     render(<App backend={fakeBackend({ ask: vi.fn(async () => res) })} startup={false} />);
-    expect(await screen.findByText("Kulang ang ebidensya.", { selector: "strong" })).toBeInTheDocument();
+    expect(await screen.findByText("Not enough evidence.", { selector: "strong" })).toBeInTheDocument();
     expect(screen.queryByRole("article", { name: "Answer" })).not.toBeInTheDocument();
     expect(screen.getByText(/Closest sources/)).toBeInTheDocument();
   });
@@ -36,7 +36,7 @@ describe("Sagot", () => {
   it("offline model is stated plainly", async () => {
     const res: AskResponse = { ...base, question: "q", status: "offline", answer: null, message: "Local AI is not running.", sources: [] };
     render(<App backend={fakeBackend({ ask: vi.fn(async () => res) })} startup={false} />);
-    expect(await screen.findByText("Offline ang local AI.", { selector: "strong" })).toBeInTheDocument();
+    expect(await screen.findByText("The local AI is offline.", { selector: "strong" })).toBeInTheDocument();
     expect(screen.getByTestId("iris-companion")).toHaveAttribute("data-iris-state", "unavailable");
   });
 });

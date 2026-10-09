@@ -28,7 +28,7 @@ export function ProposalReview({ proposal, onChange }: { proposal: Proposal; onC
 
   const pending = proposal.status === "pending";
   const isCleanup = plan.kind === "cleanup";
-  const verb = isCleanup ? "ilipat sa Recycle Bin" : "ilipat";
+  const verb = isCleanup ? "to the Recycle Bin" : "to move";
   const count = selectable.filter((o) => chosen.has(o.i)).length;
 
   const sources = useMemo(() => {
@@ -55,7 +55,7 @@ export function ProposalReview({ proposal, onChange }: { proposal: Proposal; onC
       onChange(res);
       const failed = res.log.filter((l) => l.status === "failed").length;
       finish(t, failed ? "error" : "done");
-      toast(failed ? `${failed} item(s) failed. See details below.` : "Tapos na. Naka-log sa history.", failed ? "err" : "ok");
+      toast(failed ? `${failed} item(s) failed. See details below.` : "Done. Logged in history.", failed ? "err" : "ok");
     } catch (e) {
       finish(t, "error");
       setErr((e as Error).message);
@@ -176,7 +176,7 @@ export function ProposalReview({ proposal, onChange }: { proposal: Proposal; onC
 
       {err && (
         <Notice tone="err">
-          <strong>Hindi natuloy.</strong> {err}
+          <strong>Didn't go through.</strong> {err}
         </Notice>
       )}
 
@@ -204,7 +204,7 @@ export function ProposalReview({ proposal, onChange }: { proposal: Proposal; onC
             <strong>
               {failed.length
                 ? `${proposal.log.length - failed.length} done, ${failed.length} failed.`
-                : `Tapos na. ${proposal.log.filter((l) => l.op !== "mkdir").length} items ${isCleanup ? "in the Recycle Bin" : "moved"}.`}
+                : `Done. ${proposal.log.filter((l) => l.op !== "mkdir").length} items ${isCleanup ? "in the Recycle Bin" : "moved"}.`}
             </strong>
             <span style={{ fontSize: 14 }}>Logged in operation history.</span>
           </div>
@@ -237,7 +237,7 @@ export function ProposalReview({ proposal, onChange }: { proposal: Proposal; onC
         open={confirm}
         onClose={() => setConfirm(false)}
         role="alertdialog"
-        title={`Sigurado ka? ${count} ${count === 1 ? "item" : "items"} ang ${verb}.`}
+        title={`Are you sure? ${count} ${count === 1 ? "item" : "items"} ${verb}.`}
         initialFocus={noRef}
         describedBy="confirm-desc"
       >
@@ -248,10 +248,10 @@ export function ProposalReview({ proposal, onChange }: { proposal: Proposal; onC
         </p>
         <div className="row wrap gap-3" style={{ justifyContent: "flex-end" }}>
           <button ref={noRef} className="btn btn-line" onClick={() => setConfirm(false)}>
-            Hindi · No
+            No
           </button>
           <button className="btn btn-primary" onClick={approve}>
-            Oo, ituloy · Yes
+            Yes, go ahead
           </button>
         </div>
       </Dialog>

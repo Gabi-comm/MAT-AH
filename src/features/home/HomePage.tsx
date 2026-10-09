@@ -12,14 +12,14 @@ import type { RootFolder } from "../../services/types";
 
 function greeting(): string {
   const h = new Date().getHours();
-  return h < 12 ? "Magandang umaga" : h < 18 ? "Magandang hapon" : "Magandang gabi";
+  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
 }
 
 const QUICK: { page: Page; title: string; line: string; icon: IconName }[] = [
-  { page: "hanap", title: "Hanap", line: "Find a file by what you remember", icon: "search" },
-  { page: "sagot", title: "Sagot", line: "Answers with sources", icon: "ask" },
-  { page: "kilos", title: "Kilos", line: "Organize into folders", icon: "organize" },
-  { page: "linis", title: "Linis", line: "Clear duplicates", icon: "clean" },
+  { page: "hanap", title: "Find", line: "Find a file by what you remember", icon: "search" },
+  { page: "sagot", title: "Ask", line: "Answers with sources", icon: "ask" },
+  { page: "kilos", title: "Organize", line: "Organize into folders", icon: "organize" },
+  { page: "linis", title: "Clean up", line: "Clear duplicates", icon: "clean" },
 ];
 
 export function HomePage({ navigate }: { navigate: (p: Page, params?: Record<string, string>) => void }) {
@@ -55,7 +55,7 @@ export function HomePage({ navigate }: { navigate: (p: Page, params?: Record<str
         </div>
         <div className="stack gap-2">
           <span className="greet">{greeting()}</span>
-          <h1 id="home-h">Ano'ng hinahanap mo?</h1>
+          <h1 id="home-h">What are you looking for?</h1>
         </div>
 
         <form className="seam-field lg" onSubmit={submit} role="search">
@@ -67,19 +67,19 @@ export function HomePage({ navigate }: { navigate: (p: Page, params?: Record<str
             id="home-q"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={mode === "hanap" ? '"GCash receipt na ₱1,500"' : '"Kailan ang deadline ng enrollment?"'}
+            placeholder={mode === "hanap" ? '"GCash receipt for ₱1,500"' : '"When is the enrollment deadline?"'}
             autoComplete="off"
           />
           <div className="segmented" role="radiogroup" aria-label="Mode">
             <button type="button" role="radio" aria-checked={mode === "hanap"} onClick={() => setMode("hanap")}>
-              Hanap
+              Find
             </button>
             <button type="button" role="radio" aria-checked={mode === "sagot"} onClick={() => setMode("sagot")}>
-              Sagot
+              Ask
             </button>
           </div>
           <button className="btn btn-primary" type="submit">
-            {mode === "hanap" ? "Hanapin" : "Itanong"}
+            {mode === "hanap" ? "Search" : "Ask"}
           </button>
           <span className="seam-line" aria-hidden="true" />
         </form>
@@ -109,7 +109,7 @@ export function HomePage({ navigate }: { navigate: (p: Page, params?: Record<str
           {rootsErr && <p className="subtle" style={{ fontSize: 14 }}>Unavailable until the backend is running.</p>}
           {roots && roots.length === 0 && (
             <a className="btn btn-primary" href={hrefFor("settings")} style={{ alignSelf: "flex-start" }}>
-              <Icon name="plus" /> Pumili ng folder
+              <Icon name="plus" /> Choose a folder
             </a>
           )}
           {roots && roots.length > 0 && (

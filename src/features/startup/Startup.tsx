@@ -46,7 +46,7 @@ export function Startup() {
       </button>
       <MatahWordmark height={96} animate style={{ color: "#F6F3EF", maxWidth: "86vw", height: "auto" }} />
       <div className="row gap-4" style={{ alignItems: "flex-end" }}>
-        <p className="startup-line">Ah, kita ko na!</p>
+        <p className="startup-line">Found it!</p>
         {prefs.iris.visible && (
           <span style={{ animation: "rise 1100ms var(--ease-settle) both" }}>
             <Iris preset={prefs.iris.preset} accessory={prefs.iris.accessory} size={56} theme="dark" state="idle" />

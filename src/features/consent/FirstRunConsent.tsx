@@ -74,19 +74,19 @@ export function FirstRunConsent() {
   }
 
   return (
-    <Dialog open={needed} onClose={later} title="Babasahin ko ang mga file mo para mahanap mo sila mamaya." initialFocus={allowRef} describedBy="consent-body">
+    <Dialog open={needed} onClose={later} title="I'll read your files so you can find them later." initialFocus={allowRef} describedBy="consent-body">
       <div className="row gap-4" style={{ alignItems: "flex-end" }}>
         <MatahSymbol size={44} />
         <InlineIris state="curious" size={56} />
       </div>
       <p id="consent-body" className="muted">
         MAT-AH will go through the files in your user folder: documents, PDFs, slides, spreadsheets, the words in your screenshots and photos,
-        and what is seen and said in your videos. Then you can ask for any of them in your own words, in English, Filipino or Taglish.
+        and what is seen and said in your videos. Then you can ask for any of them in your own words.
       </p>
       <ul className="stack gap-2" style={{ margin: 0, paddingLeft: 20, fontSize: 15 }}>
         <li>Everything stays on this computer. Nothing is uploaded, and it works with Wi-Fi off.</li>
         <li>It skips system folders, app data and code dependencies.</li>
-        <li>It only reads. Nothing is moved or deleted unless you say yes in Kilos.</li>
+        <li>It only reads. Nothing is moved or deleted unless you say yes in Organize.</li>
         <li>You can pause reading at any time in Settings.</li>
       </ul>
       {err && <Notice tone="err">{err}</Notice>}

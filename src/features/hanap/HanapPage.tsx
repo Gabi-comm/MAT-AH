@@ -69,17 +69,17 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
   const parsed = data?.query;
   const announce =
     search.status === "loading"
-      ? "Sandali, hinahanap ko…"
+      ? "One moment, searching…"
       : search.status === "done" && data
         ? data.hits.length
-          ? `Ah, kita ko na! ${plural(data.hits.length, "result")}.`
-          : "Walang nahanap na file."
+          ? `Found it! ${plural(data.hits.length, "result")}.`
+          : "No files found."
         : search.status === "error"
           ? "Search failed."
           : "";
 
   return (
-    <AppShell page="hanap" title="Hanap">
+    <AppShell page="hanap" title="Find">
       <form className={`seam-field${loading ? " is-busy" : ""}`} onSubmit={submit} role="search" aria-busy={loading}>
         <Icon name="search" size={20} />
         <label htmlFor="hanap-q" className="sr-only">
@@ -90,7 +90,7 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
           ref={inputRef}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Ano'ng hinahanap mo?"
+          placeholder="What are you looking for?"
           autoComplete="off"
         />
         {loading && (
@@ -99,7 +99,7 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
           </button>
         )}
         <button className="btn btn-primary" type="submit">
-          Hanapin
+          Search
         </button>
         <span className="seam-line" aria-hidden="true" />
       </form>
@@ -135,12 +135,12 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
 
       {data && data.relaxed.length > 0 && !loading && (
         <Notice tone="warn">
-          Walang eksaktong tugma sa {data.relaxed.map((r) => (r === "type" ? "file type" : r)).join(" at ")}, kaya pinalawak ko ang paghahanap.
+          No exact match for {data.relaxed.map((r) => (r === "type" ? "file type" : r)).join(" and ")}, so I widened the search.
         </Notice>
       )}
 
       {!q && search.status === "idle" && (
-        <EmptyState iris="idle" title="Ilarawan mo lang." body="You don't need the file name. Describe what's inside, what it looks like, or when you saved it." />
+        <EmptyState iris="idle" title="Just describe it." body="You don't need the file name. Describe what's inside, what it looks like, or when you saved it." />
       )}
 
       {search.status === "error" && <ErrorState error={search.error} onRetry={() => run(q)} />}
@@ -159,11 +159,11 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
 
       {data && search.status !== "error" && data.hits.length === 0 && !loading && (
         <EmptyState
-          title="Wala pa akong nakita."
-          body={<>Try natin ibang description? No file in your authorized folders matched "{data.query.raw}".</>}
+          title="Nothing found yet."
+          body={<>Try a different description? No file in your authorized folders matched "{data.query.raw}".</>}
         >
           <button className="btn btn-line" onClick={() => inputRef.current?.focus()}>
-            Baguhin ang search
+            Change search
           </button>
           <a className="btn btn-line" href={hrefFor("settings")}>
             Add a folder
@@ -175,7 +175,7 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
         <section className="stack gap-4" aria-label="Results" style={{ opacity: loading ? 0.55 : 1, transition: "opacity 220ms" }}>
           <div className="row wrap gap-2">
             <button className="chip chip-sm" aria-pressed={kind === "all"} onClick={() => setKind("all")}>
-              Lahat · {data.hits.length}
+              All · {data.hits.length}
             </button>
             {kinds.map(([k, n]) => (
               <button key={k} className="chip chip-sm" aria-pressed={kind === k} onClick={() => setKind(k)}>

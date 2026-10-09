@@ -67,3 +67,28 @@ describe("Settings: theme, motion and Iris customization", () => {
     await waitFor(() => expect(document.querySelector('.preview-box svg.iris')?.getAttribute("data-state")).toMatch(/found|celebrating/));
   });
 });
+
+describe("Settings: local LLM", () => {
+  beforeEach(() => {
+    window.location.hash = "#/settings";
+  });
+
+  it("saves only changed settings and warns about a non-local address", async () => {
+    const backend = fakeBackend();
+    render(<App backend={backend} startup={false} />);
+    const section = (await screen.findByRole("heading", { name: "Local LLM" })).closest("section")!;
+    const save = within(section).getByRole("button", { name: "Save" });
+    expect(save).toBeDisabled();
+
+    await userEvent.selectOptions(within(section).getByLabelText("Answer model"), "big:8b");
+    await userEvent.selectOptions(within(section).getByLabelText("Context window"), "16384");
+    await userEvent.click(save);
+    expect(backend.setLlm).toHaveBeenCalledWith(expect.objectContaining({ chat_model: "big:8b", num_ctx: 16384 }));
+    await waitFor(() => expect(save).toBeDisabled());
+
+    const host = within(section).getByLabelText("Ollama address");
+    await userEvent.clear(host);
+    await userEvent.type(host, "http://192.168.1.5:11434");
+    expect(within(section).getByText(/not on this computer/)).toBeInTheDocument();
+  });
+});

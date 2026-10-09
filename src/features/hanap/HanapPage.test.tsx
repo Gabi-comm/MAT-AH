@@ -30,7 +30,7 @@ describe("Hanap search lifecycle and Iris", () => {
     expect(screen.getByText("Best match")).toBeInTheDocument();
     expect(irisState()).toBe("found");
     await waitFor(() => expect(irisState()).toBe("celebrating"));
-    expect(screen.getByTestId("iris-companion")).toHaveTextContent("Ah, kita ko na!");
+    expect(screen.getByTestId("iris-companion")).toHaveTextContent("Found it!");
     await waitFor(() => expect(irisState()).toBe("idle"), { timeout: 2500 });
     // Results stay usable throughout.
     expect(screen.getByRole("button", { name: "Preview GCash_receipt.jpg" })).toBeEnabled();
@@ -40,7 +40,7 @@ describe("Hanap search lifecycle and Iris", () => {
     const backend = fakeBackend({ search: vi.fn(async (q: string) => searchResponse(q, [])) });
     go("₱15,000");
     render(<App backend={backend} startup={false} />);
-    expect(await screen.findByRole("heading", { name: "Wala pa akong nakita." })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Nothing found yet." })).toBeInTheDocument();
     expect(irisState()).toBe("no-results");
     await new Promise((r) => setTimeout(r, 300));
     expect(irisState()).not.toBe("celebrating");
@@ -50,7 +50,7 @@ describe("Hanap search lifecycle and Iris", () => {
     const backend = fakeBackend({ search: vi.fn(async () => { throw new ApiError(500, "boom"); }) });
     go("anything");
     render(<App backend={backend} startup={false} />);
-    expect(await screen.findByRole("alert")).toHaveTextContent("May hindi gumana");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Something went wrong");
     expect(irisState()).toBe("error");
   });
 
@@ -73,7 +73,7 @@ describe("Hanap search lifecycle and Iris", () => {
     expect(screen.queryByText("OLD.jpg")).not.toBeInTheDocument();
     expect(irisState()).toBe("searching");
     await act(async () => calls[1].d.resolve(searchResponse("second", [])));
-    expect(await screen.findByRole("heading", { name: "Wala pa akong nakita." })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Nothing found yet." })).toBeInTheDocument();
     expect(irisState()).toBe("no-results");
   });
 

@@ -102,7 +102,7 @@ export function LinisPage() {
   );
 
   return (
-    <AppShell page="linis" title="Linis">
+    <AppShell page="linis" title="Clean up">
       <form className={`seam-field${scan.status === "loading" ? " is-busy" : ""}`} onSubmit={(e) => { e.preventDefault(); rescan(); }} aria-busy={scan.status === "loading"}>
         <Icon name="folder" size={20} />
         <label htmlFor="linis-folder" className="sr-only">Folder to check</label>
@@ -115,7 +115,7 @@ export function LinisPage() {
           <div className="row gap-4">
             <InlineIris state="searching" size={52} />
             <div className="stack gap-1">
-              <strong>Sinusuri ang mga folder mo…</strong>
+              <strong>Checking your folders…</strong>
               <span className="subtle" style={{ fontSize: 14 }}>Comparing file contents to find exact duplicates, empty files and empty folders.</span>
             </div>
           </div>
@@ -128,7 +128,7 @@ export function LinisPage() {
         <>
           <div className="page-head">
             <h1 style={{ fontSize: "clamp(26px, 2.6vw, 38px)" }}>
-              {total > 0 ? `May ${formatBytes(total)} na puwedeng i-review.` : "Malinis na ang mga folder mo."}
+              {total > 0 ? `${formatBytes(total)} to review.` : "Your folders are already clean."}
             </h1>
             <button className="btn btn-ghost" onClick={rescan}>
               <Icon name="refresh" /> Scan again
@@ -177,10 +177,10 @@ export function LinisPage() {
                       </div>
                     ))
                   ) : (
-                    <EmptyState iris="success" title="Walang exact duplicates." />
+                    <EmptyState iris="success" title="No exact duplicates." />
                   ))}
                 {tab === "zero" &&
-                  (r.zero_byte.length ? r.zero_byte.map((x) => row(x, "0 B · Recycle Bin")) : <EmptyState iris="success" title="Walang empty files." />)}
+                  (r.zero_byte.length ? r.zero_byte.map((x) => row(x, "0 B · Recycle Bin")) : <EmptyState iris="success" title="No empty files." />)}
                 {tab === "empty" &&
                   (r.empty_folders.length ? (
                     r.empty_folders.map((d) => (
@@ -194,7 +194,7 @@ export function LinisPage() {
                       </label>
                     ))
                   ) : (
-                    <EmptyState iris="success" title="Walang empty folders." />
+                    <EmptyState iris="success" title="No empty folders." />
                   ))}
               </div>
 

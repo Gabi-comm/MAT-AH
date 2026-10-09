@@ -50,7 +50,7 @@ export async function request<T>(path: string, opts: RequestOpts = {}): Promise<
     });
   } catch (e) {
     if (isAbort(e)) throw e;
-    throw new ApiError(0, "Hindi maabot ang MAT-AH backend. Is it running on this computer?");
+    throw new ApiError(0, "Can't reach the MAT-AH backend. Is it running on this computer?");
   }
   if (!res.ok) {
     let detail = "";

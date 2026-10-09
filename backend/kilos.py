@@ -30,7 +30,7 @@ SYSTEM = """You are Kilos, the action agent of MAT-AH. The user wants files orga
 Choose which candidate files clearly belong to what the user asked for and name ONE new folder for them.
 Leave a file out when it is only loosely related; a smaller, correct plan is better than a big one.
 Use only file ids from the candidate list. Folder name: short, Title Case, no slashes.
-Give a one-sentence reason in the user's language."""
+Give a one-sentence reason in English."""
 
 
 def now() -> str:
@@ -116,7 +116,7 @@ def propose(con, request: str) -> dict:
     return _store(con, request, plan)
 
 
-def propose_cleanup(con, file_ids: list[int], folders: list[str], request: str = "Linis cleanup") -> dict:
+def propose_cleanup(con, file_ids: list[int], folders: list[str], request: str = "Clean-up") -> dict:
     ops = []
     for fid in file_ids:
         row = con.execute("SELECT path FROM files WHERE id=?", (fid,)).fetchone()

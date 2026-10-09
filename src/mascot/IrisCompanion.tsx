@@ -9,16 +9,16 @@ import { useIris } from "./IrisContext";
 import type { IrisState } from "./iris.types";
 
 const LINES: Partial<Record<IrisState, string>> = {
-  searching: "Sandali, hinahanap ko…",
+  searching: "One moment, searching…",
   thinking: "Preparing your answer…",
-  found: "Ah, kita ko na!",
-  celebrating: "Ah, kita ko na!",
-  "no-results": "Wala pa akong nakita.",
-  planning: "Pinaplano ko…",
-  "waiting-for-approval": "Ikaw ang bahala.",
-  success: "Ayos na!",
-  error: "May hindi gumana.",
-  unavailable: "Offline ang local AI.",
+  found: "Found it!",
+  celebrating: "Found it!",
+  "no-results": "Nothing found yet.",
+  planning: "Planning…",
+  "waiting-for-approval": "Your call.",
+  success: "All done!",
+  error: "Something went wrong.",
+  unavailable: "The local AI is offline.",
 };
 
 export function IrisCompanion({ size = 56, showBubble = true }: { size?: number; showBubble?: boolean }) {

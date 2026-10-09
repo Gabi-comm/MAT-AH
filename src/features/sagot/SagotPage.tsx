@@ -74,7 +74,7 @@ export function SagotPage({ q, navigate }: { q: string; navigate: (p: Page, para
     setPreview({ fileId: s.file.id, name: s.file.name, chunkId: s.chunk_id, locator: s.locator, highlight: s.highlight, excerpt: s.snippet });
 
   return (
-    <AppShell page="sagot" title="Sagot">
+    <AppShell page="sagot" title="Ask">
       <div className="split">
         <section className="primary stack gap-5" aria-label="Question and answer">
           <form className={`seam-field${loading ? " is-busy" : ""}`} onSubmit={submit} aria-busy={loading}>
@@ -82,7 +82,7 @@ export function SagotPage({ q, navigate }: { q: string; navigate: (p: Page, para
             <label htmlFor="sagot-q" className="sr-only">
               Ask a question about your files
             </label>
-            <input id="sagot-q" ref={inputRef} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Magtanong tungkol sa files mo…" autoComplete="off" />
+            <input id="sagot-q" ref={inputRef} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Ask about your files…" autoComplete="off" />
             <button className="btn btn-primary" type="submit" aria-label="Ask">
               <Icon name="send" />
             </button>
@@ -90,12 +90,12 @@ export function SagotPage({ q, navigate }: { q: string; navigate: (p: Page, para
           </form>
 
           {!q && ask.status === "idle" && (
-            <EmptyState iris="idle" title="Itanong mo, sasagutin ko mula sa files mo." body="Every answer links to the exact page it came from. If your files don't say, I'll tell you." />
+            <EmptyState iris="idle" title="Ask, and I'll answer from your files." body="Every answer links to the exact page it came from. If your files don't say, I'll tell you." />
           )}
 
           {q && (
             <div className="stack gap-2">
-              <span className="eyebrow">Tanong mo</span>
+              <span className="eyebrow">Your question</span>
               <h1 style={{ fontSize: "clamp(24px, 2.4vw, 34px)" }}>{q}</h1>
             </div>
           )}
@@ -118,7 +118,7 @@ export function SagotPage({ q, navigate }: { q: string; navigate: (p: Page, para
             {d && !loading && d.status === "grounded" && d.answer && (
               <article className="card pad-lg answer reveal" aria-label="Answer">
                 <div className="row wrap gap-3">
-                  <span className="eyebrow">Sagot · generated from your files</span>
+                  <span className="eyebrow">Answer · generated from your files</span>
                   <span className="tag tag-ok" style={{ marginLeft: "auto" }}>
                     <Icon name="check" size={14} /> Grounded · {d.cited?.length ?? 0} {d.cited?.length === 1 ? "source" : "sources"}
                   </span>
@@ -156,12 +156,12 @@ export function SagotPage({ q, navigate }: { q: string; navigate: (p: Page, para
                 <div className="row gap-4">
                   <InlineIris state={d.status === "offline" ? "unavailable" : "no-results"} size={56} />
                   <div className="stack gap-1">
-                    <strong>{d.status === "offline" ? "Offline ang local AI." : "Kulang ang ebidensya."}</strong>
+                    <strong>{d.status === "offline" ? "The local AI is offline." : "Not enough evidence."}</strong>
                     <span className="muted" style={{ fontSize: 15 }}>{d.message}</span>
                   </div>
                 </div>
                 {d.status === "offline" && (
-                  <Notice tone="warn">No answer was generated. Start the local model (Ollama) to use Sagot. The closest sources are still listed.</Notice>
+                  <Notice tone="warn">No answer was generated. Start the local model (Ollama) to get answers. The closest sources are still listed.</Notice>
                 )}
                 {d.status === "insufficient" && (
                   <Notice tone="info">MAT-AH will not guess. Check the closest sources, or add the folder where the right file might be.</Notice>
@@ -231,7 +231,7 @@ export function SagotPage({ q, navigate }: { q: string; navigate: (p: Page, para
               );
             })}
           <p className="subtle" style={{ fontSize: 12.5, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
-            Sagot only states what these files say. Numbers and dates are checked against the cited passages before an answer is shown.
+            Answers only state what these files say. Numbers and dates are checked against the cited passages before an answer is shown.
           </p>
         </aside>
       </div>

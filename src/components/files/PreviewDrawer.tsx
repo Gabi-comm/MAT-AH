@@ -15,7 +15,7 @@ export interface PreviewTarget {
   chunkId?: number | null;
   locator?: Locator;
   highlight?: string[];
-  /** Short evidence passage to spotlight (from search or Sagot). */
+  /** Short evidence passage to spotlight (from search or Ask). */
   excerpt?: string;
 }
 
@@ -57,7 +57,7 @@ export function PreviewDrawer({ target, onClose }: { target: PreviewTarget | nul
       const d = await backend.addNote(target.fileId, note.trim());
       setDetail(d);
       setNote("");
-      toast("Naka-save ang Tala. Searchable na.");
+      toast("Note saved. It's searchable now.");
     } catch (err) {
       toast((err as Error).message, "err");
     } finally {
@@ -67,7 +67,7 @@ export function PreviewDrawer({ target, onClose }: { target: PreviewTarget | nul
 
   return (
     <Dialog open={!!target} onClose={onClose} variant="drawer" title={target?.name ?? ""}>
-      {error && <ErrorState error={error} onRetry={() => setAttempt((a) => a + 1)} title="Hindi ma-preview ang file." />}
+      {error && <ErrorState error={error} onRetry={() => setAttempt((a) => a + 1)} title="Can't preview this file." />}
       {!error && !detail && (
         <div className="stack gap-3" aria-busy="true" aria-label="Loading preview">
           <Skeleton h={300} />
@@ -124,8 +124,8 @@ export function PreviewDrawer({ target, onClose }: { target: PreviewTarget | nul
             )}
           </div>
 
-          <section className="stack gap-3" aria-label="Tala notes">
-            <span className="eyebrow">Tala · notes on this file</span>
+          <section className="stack gap-3" aria-label="Notes">
+            <span className="eyebrow">Notes on this file</span>
             {detail.notes.length > 0 ? (
               <ul className="list-plain">
                 {detail.notes.map((n) => (
@@ -141,7 +141,7 @@ export function PreviewDrawer({ target, onClose }: { target: PreviewTarget | nul
             )}
             <form className="field" onSubmit={saveNote}>
               <label htmlFor="tala">Add a note</label>
-              <textarea id="tala" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ito yung sinend ni ma'am before enrollment." />
+              <textarea id="tala" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="The one my teacher sent before enrollment." />
               <button className="btn btn-line" type="submit" disabled={saving || !note.trim()} style={{ alignSelf: "flex-start" }}>
                 {saving ? "Sine-save…" : "Save note"}
               </button>

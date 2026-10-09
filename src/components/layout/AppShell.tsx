@@ -17,12 +17,12 @@ interface NavDef {
 }
 
 const DISCOVER: NavDef[] = [
-  { page: "hanap", label: "Hanap", en: "Find", icon: "search" },
-  { page: "sagot", label: "Sagot", en: "Ask", icon: "ask" },
+  { page: "hanap", label: "Find", icon: "search" },
+  { page: "sagot", label: "Ask", icon: "ask" },
 ];
 const ACT: NavDef[] = [
-  { page: "kilos", label: "Kilos", en: "Organize", icon: "organize" },
-  { page: "linis", label: "Linis", en: "Clean up", icon: "clean" },
+  { page: "kilos", label: "Organize", icon: "organize" },
+  { page: "linis", label: "Clean up", icon: "clean" },
 ];
 
 /** Active item: Iris acts out the section. Inactive (or Iris hidden): the plain icon. */

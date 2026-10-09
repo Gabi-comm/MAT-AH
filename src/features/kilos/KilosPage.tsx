@@ -58,15 +58,15 @@ export function KilosPage({ q }: { q: string }) {
   };
 
   return (
-    <AppShell page="kilos" title="Kilos">
+    <AppShell page="kilos" title="Organize">
       <form className={`seam-field${propose.status === "loading" ? " is-busy" : ""}`} onSubmit={submit} aria-busy={propose.status === "loading"}>
         <Icon name="organize" size={20} />
         <label htmlFor="kilos-q" className="sr-only">
           What should MAT-AH organize?
         </label>
-        <input id="kilos-q" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder='Halimbawa: "Ipunin mo lahat ng enrollment requirements"' autoComplete="off" />
+        <input id="kilos-q" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder='For example: "Gather all my enrollment requirements"' autoComplete="off" />
         <button className="btn btn-primary" type="submit" disabled={propose.status === "loading"}>
-          Gumawa ng plano
+          Make a plan
         </button>
         <span className="seam-line" aria-hidden="true" />
       </form>
@@ -76,12 +76,12 @@ export function KilosPage({ q }: { q: string }) {
           <div className="card row gap-4" role="status">
             <InlineIris state="planning" size={56} />
             <div className="stack gap-1">
-              <strong>Pinaplano ko…</strong>
+              <strong>Planning…</strong>
               <span className="subtle" style={{ fontSize: 14 }}>Finding matching files and drafting a proposal. Nothing is moved.</span>
             </div>
           </div>
         )}
-        {propose.status === "error" && <ErrorState error={propose.error} onRetry={() => run(draft.trim())} title="Hindi makagawa ng plano." />}
+        {propose.status === "error" && <ErrorState error={propose.error} onRetry={() => run(draft.trim())} title="Couldn't make a plan." />}
       </div>
 
       {!proposal && propose.status === "idle" && (

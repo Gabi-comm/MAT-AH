@@ -6,7 +6,7 @@
   DEMO badge while this layer is active.
 
   Handy demo queries:
-    "GCash receipt na ₱1,500"      results
+    "GCash receipt for ₱1,500"     results
     "₱15,000"                        no results
     "demo error"                     simulated backend error
 */
@@ -230,14 +230,14 @@ export const demoBackend: Backend = {
       const base = { question: q, timings: { retrieve: 40, generate: 1200, verify: 3 }, model: "demo-model", search_mode: "hybrid" };
       if (/deadline|enroll/i.test(q)) {
         return { ...base, sources: [pick(2, 1)], status: "grounded", cited: [1], problems: [],
-          answer: "Ayon sa Enrollment Announcement, ang huling araw ng enrollment ay October 24, 2026, at may late fee na ₱500.00 pagkatapos nito [1]." };
+          answer: "According to the Enrollment Announcement, the last day of enrollment is October 24, 2026, with a ₱500.00 late fee after that [1]." };
       }
       if (/tuition|magkano/i.test(q)) {
         return { ...base, sources: [pick(3, 1)], status: "grounded", cited: [1], problems: [],
-          answer: "Ang binayaran mong tuition para sa 1st Semester ay ₱18,450.00, ayon sa Official Receipt [1]." };
+          answer: "You paid ₱18,450.00 in tuition for the 1st Semester, according to the Official Receipt [1]." };
       }
       return { ...base, sources: s.hits.slice(0, 2).map((h, i) => pick(h.file.id, i + 1)), status: "insufficient", answer: null,
-        message: "Kulang ang ebidensya sa files mo, insufficient evidence. Here are the closest sources.", problems: ["demo: no matching evidence"] };
+        message: "Not enough evidence in your files. Here are the closest sources.", problems: ["demo: no matching evidence"] };
     }, signal),
   file: (id, _chunk, signal) =>
     wait(250, (): FileDetail => {
@@ -280,7 +280,7 @@ export const demoBackend: Backend = {
   proposeCleanup: (fileIds, folders) =>
     wait(400, () => {
       if (!fileIds.length && !folders.length) throw new ApiError(400, "Nothing selected.");
-      return store("Linis cleanup", {
+      return store("Clean-up", {
         kind: "cleanup", reason: "Send selected items to the Recycle Bin.", planner: "linis",
         ops: [...fileIds.map((id, k) => ({ i: k, op: "trash" as const, file_id: id, src: `${ROOT}\\(demo file ${id})` })),
               ...folders.map((d, k) => ({ i: fileIds.length + k, op: "rmdir" as const, src: d }))],

@@ -64,15 +64,15 @@ export function EmptyState({
   );
 }
 
-export function ErrorState({ error, onRetry, title = "May hindi gumana. Subukan ulit natin." }: { error: Error | null; onRetry?: () => void; title?: string }) {
+export function ErrorState({ error, onRetry, title = "Something went wrong. Let's try again." }: { error: Error | null; onRetry?: () => void; title?: string }) {
   const status = error instanceof ApiError ? error.status : undefined;
   const friendly =
     status === 0
-      ? "Hindi maabot ang MAT-AH backend sa computer na ito. Start it, then try again."
+      ? "Can't reach the MAT-AH backend on this computer. Start it, then try again."
       : status === 403
         ? "That file is outside your authorized folders."
         : status === 410
-          ? "Wala na ang file sa dating lugar. Re-index from Settings."
+          ? "That file is no longer where it was. Re-index from Settings."
           : status && status >= 500
             ? "The backend hit a problem while working on this."
             : error?.message;
@@ -83,7 +83,7 @@ export function ErrorState({ error, onRetry, title = "May hindi gumana. Subukan 
       {friendly && <p>{friendly}</p>}
       {onRetry && (
         <button className="btn btn-line" onClick={onRetry}>
-          <Icon name="refresh" /> Subukan ulit
+          <Icon name="refresh" /> Try again
         </button>
       )}
       {error && (
