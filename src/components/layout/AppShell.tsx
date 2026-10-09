@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { MatahSymbol, MatahWordmark } from "../../branding/MatahLogo";
 import { useStatus } from "../../hooks/StatusContext";
 import { hrefFor, type Page } from "../../hooks/useRoute";
+import { withViewTransition } from "../../hooks/viewTransition";
 import { useIris } from "../../mascot/IrisContext";
 import { NavIris } from "../../mascot/NavIris";
 import { usePrefs } from "../../prefs/PrefsContext";
@@ -98,7 +99,17 @@ function ThemeToggle() {
   return (
     <button
       className="icon-btn"
-      onClick={() => update({ theme: next })}
+      onClick={(e) => {
+        // Circular reveal of the new theme, growing from the button.
+        const r = e.currentTarget.getBoundingClientRect();
+        const root = document.documentElement;
+        root.style.setProperty("--vt-x", `${r.left + r.width / 2}px`);
+        root.style.setProperty("--vt-y", `${r.top + r.height / 2}px`);
+        withViewTransition(() => {
+          root.dataset.theme = next;
+          update({ theme: next });
+        }, "theme-vt");
+      }}
       aria-label={`Switch to ${next} theme`}
       title={`Theme: ${prefs.theme}. Click for ${next}.`}
     >
@@ -106,6 +117,9 @@ function ThemeToggle() {
     </button>
   );
 }
+
+/** Each page mounts its own shell; a negative delay from app start keeps the aurora drifting without restarting. */
+const AURORA_CLOCK = () => `-${(performance.now() / 1000).toFixed(2)}s`;
 
 export function AppShell({
   page,
@@ -121,8 +135,14 @@ export function AppShell({
   const backend = useBackend();
   const { prefs } = usePrefs();
   const { state: irisState } = useIris();
+  const [auroraClock] = useState(AURORA_CLOCK);
   return (
-    <div className={`shell${prefs.sidebarCollapsed ? " is-collapsed" : ""}`} data-testid="app-shell" data-iris-state={irisState}>
+    <div
+      className={`shell${prefs.sidebarCollapsed ? " is-collapsed" : ""}`}
+      data-testid="app-shell"
+      data-iris-state={irisState}
+      style={{ "--aurora-clock": auroraClock } as CSSProperties}
+    >
       <a className="skip-link" href="#main">
         Skip to content
       </a>

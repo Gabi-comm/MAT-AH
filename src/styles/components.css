@@ -37,14 +37,14 @@
     radial-gradient(38% 46% at 22% 18%, var(--aurora-warm), transparent 70%),
     radial-gradient(55% 62% at 28% 26%, var(--aurora-purple), transparent 72%),
     radial-gradient(70% 80% at 32% 34%, var(--aurora-indigo), transparent 75%);
-  animation: aurora-a 26s ease-in-out infinite alternate;
+  animation: aurora-a 26s ease-in-out var(--aurora-clock, 0s) infinite alternate;
 }
 
 .shell::after {
   background:
     radial-gradient(34% 40% at 82% 84%, var(--aurora-violet-hi), transparent 70%),
     radial-gradient(52% 58% at 76% 80%, var(--aurora-violet), transparent 74%);
-  animation: aurora-b 32s ease-in-out infinite alternate;
+  animation: aurora-b 32s ease-in-out var(--aurora-clock, 0s) infinite alternate;
 }
 
 @keyframes aurora-a {
@@ -221,6 +221,56 @@
 .dot.err { background: #ff8a80; }
 
 /* The canvas: a rounded panel with a plum glow over reeded glass. */
+/* ---------- Page transitions (View Transitions API; skipped with motion off) ----------
+   Switching tabs: the rail holds still, the page content fades and rises in,
+   and the background is left alone (its clock keeps it continuous). */
+.rail { view-transition-name: rail; }
+.main { view-transition-name: page; }
+
+html.page-vt::view-transition-old(root),
+html.page-vt::view-transition-new(root),
+html.page-vt::view-transition-group(rail),
+html.page-vt::view-transition-old(rail),
+html.page-vt::view-transition-new(rail) {
+  animation: none;
+}
+
+html.page-vt::view-transition-old(page) {
+  animation: vt-page-out 160ms var(--ease-settle) both;
+}
+
+html.page-vt::view-transition-new(page) {
+  animation: vt-page-in 320ms var(--ease-settle) 60ms both;
+}
+
+@keyframes vt-page-out {
+  to { opacity: 0; transform: translateY(-6px) scale(0.995); }
+}
+
+@keyframes vt-page-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.995); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+/* Theme toggle: the new theme grows as a circle from the button over the whole screen. */
+html.theme-vt .rail,
+html.theme-vt .main {
+  view-transition-name: none;
+}
+
+html.theme-vt::view-transition-old(root) {
+  animation: none;
+}
+
+html.theme-vt::view-transition-new(root) {
+  animation: vt-theme-reveal 560ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes vt-theme-reveal {
+  from { clip-path: circle(0 at var(--vt-x, 100%) var(--vt-y, 0)); }
+  to { clip-path: circle(150vmax at var(--vt-x, 100%) var(--vt-y, 0)); }
+}
+
 /* The page: transparent over the aurora; scrolls inside the panel on desktop. */
 .main {
   flex: 999 1 560px;

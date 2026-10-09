@@ -177,6 +177,39 @@ export interface LlmInfo {
   vision_model: string | null;
   embed_model: string;
   embed_installed: boolean;
+  /** Models on this computer: from Ollama when it is up, else read from its model folder. */
+  downloaded: DownloadedModel[];
+  /** Curated models worth downloading, checked against this computer's memory. */
+  recommended: RecommendedModel[];
+  /** Total memory in GB, or null when it can't be read. */
+  ram_gb: number | null;
+  /** Background downloads by model name. */
+  pulls: Record<string, ModelPull>;
+}
+
+export interface DownloadedModel {
+  name: string;
+  size_gb: number | null;
+  embed: boolean;
+}
+
+export interface RecommendedModel {
+  name: string;
+  label: string;
+  uses: ("answer" | "image" | "embed")[];
+  size_gb: number | null;
+  min_ram_gb: number;
+  note: string;
+  installed: boolean;
+  fits: boolean;
+}
+
+export interface ModelPull {
+  state: "downloading" | "done" | "error";
+  status: string;
+  completed: number;
+  total: number;
+  error: string | null;
 }
 
 /** GET /api/linis */

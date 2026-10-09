@@ -297,7 +297,8 @@ def _llm_info() -> dict:
     return {"config": llm.config(), "defaults": llm.DEFAULTS, "auto_order": llm.CHAT_PREFS,
             "up": llm.reachable(), "installed": [m for m in llm.installed() if not m.endswith("-cloud")],
             "chat_model": llm.chat_model(), "vision_model": llm.vision_model(), "embed_model": llm.EMBED_MODEL,
-            "embed_installed": llm.embed_available()}
+            "embed_installed": llm.embed_available(), "downloaded": (dl := llm.downloaded()),
+            "recommended": llm.recommended({m["name"] for m in dl}), "ram_gb": llm.ram_gb(), "pulls": llm.pulls}
 
 
 @app.get("/api/llm")
@@ -310,6 +311,16 @@ def get_llm(refresh: bool = False):
 @app.put("/api/llm")
 def put_llm(patch: dict):
     llm.set_config(patch)
+    return _llm_info()
+
+
+class PullIn(BaseModel):
+    model: str
+
+
+@app.post("/api/llm/pull")
+def pull_llm(body: PullIn):
+    llm.pull(body.model)
     return _llm_info()
 
 

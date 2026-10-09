@@ -23,6 +23,8 @@ export interface Backend {
   status(signal?: AbortSignal): Promise<SystemStatus>;
   llm(refresh?: boolean, signal?: AbortSignal): Promise<LlmInfo>;
   setLlm(patch: Partial<LlmConfig>): Promise<LlmInfo>;
+  /** Starts downloading a recommended model in Ollama; poll llm() for progress. */
+  pullLlm(model: string): Promise<LlmInfo>;
   roots(signal?: AbortSignal): Promise<RootFolder[]>;
   /** path omitted: the backend opens the native Windows folder picker. */
   addRoot(path?: string): Promise<{ id: number; path: string; added_at: string } | { cancelled: true }>;
@@ -54,6 +56,7 @@ export const realBackend: Backend = {
   status: (signal) => request("/api/status", { signal }),
   llm: (refresh, signal) => request("/api/llm", { params: { refresh: refresh ? 1 : undefined }, signal }),
   setLlm: (patch) => request("/api/llm", { method: "PUT", body: patch }),
+  pullLlm: (model) => request("/api/llm/pull", { method: "POST", body: { model } }),
   roots: (signal) => request("/api/roots", { signal }),
   addRoot: (path) => request("/api/roots", { method: "POST", body: { path: path ?? null } }),
   addComputer: () => request("/api/roots/computer", { method: "POST" }),

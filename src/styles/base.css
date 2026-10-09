@@ -28,8 +28,8 @@ html.theme-transition,
 html.theme-transition *,
 html.theme-transition *::before,
 html.theme-transition *::after {
-  transition: background-color var(--t-state) var(--ease-settle), color var(--t-state) var(--ease-settle),
-    border-color var(--t-state) var(--ease-settle), fill var(--t-state) var(--ease-settle) !important;
+  transition: background-color 360ms var(--ease-settle), color 360ms var(--ease-settle),
+    border-color 360ms var(--ease-settle), fill 360ms var(--ease-settle) !important;
 }
 
 h1,

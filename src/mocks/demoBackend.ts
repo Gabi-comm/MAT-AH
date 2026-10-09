@@ -171,6 +171,9 @@ function llmInfo(): LlmInfo {
     config: { ...llmConfig }, defaults: { ...LLM_DEFAULTS }, auto_order: ["demo-model"], up: true, installed,
     chat_model: llmConfig.chat_model || "demo-model", vision_model: llmConfig.vision_model || "demo-vision",
     embed_model: "demo-embed", embed_installed: true,
+    downloaded: installed.map((name) => ({ name, size_gb: 2, embed: name.includes("embed") })),
+    recommended: [{ name: "demo-small", label: "Demo Small", uses: ["answer"], size_gb: 1.4, min_ram_gb: 4, note: "Demo only.", installed: false, fits: true }],
+    ram_gb: 16, pulls: {},
   };
 }
 
@@ -191,6 +194,9 @@ export const demoBackend: Backend = {
   setLlm: (patch) => wait(200, () => {
     llmConfig = { ...llmConfig, ...patch };
     return llmInfo();
+  }),
+  pullLlm: () => wait(200, () => {
+    throw new ApiError(400, "Downloads are off in demo mode.");
   }),
   roots: (signal) =>
     wait(100, (): RootFolder[] => [{ id: 1, path: ROOT, added_at: "2026-10-01T09:00:00", files: FILES.length, name: "MAT-AH Demo" }], signal),

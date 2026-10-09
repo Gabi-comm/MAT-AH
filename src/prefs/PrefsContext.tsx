@@ -48,9 +48,10 @@ export function PrefsProvider({ children, initial }: { children: ReactNode; init
   // Apply theme. Animate the colour change only after first paint and only with motion on.
   useEffect(() => {
     const root = document.documentElement;
-    if (!firstTheme.current && motion !== "none") {
+    // The top-bar toggle runs its own circular reveal; a colour fade on top would blur its snapshot.
+    if (!firstTheme.current && motion !== "none" && !root.classList.contains("theme-vt")) {
       root.classList.add("theme-transition");
-      const t = window.setTimeout(() => root.classList.remove("theme-transition"), 260);
+      const t = window.setTimeout(() => root.classList.remove("theme-transition"), 400);
       root.dataset.theme = resolvedTheme;
       return () => window.clearTimeout(t);
     }

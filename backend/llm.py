@@ -256,3 +256,108 @@ def warm() -> None:
             chat("Reply with OK.", "ping")
     except Exception:
         pass
+
+
+# ---------- downloaded and recommended models (Settings > Local LLM) ----------
+# Download sizes are what Ollama's library serves; None where we have not measured one.
+RECOMMENDED = [
+    {"name": "gemma4:e4b", "label": "Gemma 4 E4B", "uses": ["answer", "image"], "size_gb": 6.6, "min_ram_gb": 12,
+     "note": "Best answers and can read photos and scans."},
+    {"name": "gemma4:e2b", "label": "Gemma 4 E2B", "uses": ["answer", "image"], "size_gb": None, "min_ram_gb": 8,
+     "note": "Lighter Gemma 4 that can also read photos."},
+    {"name": "qwen3:8b", "label": "Qwen3 8B", "uses": ["answer"], "size_gb": 5.2, "min_ram_gb": 12,
+     "note": "Strong Taglish answers, text only."},
+    {"name": "qwen3:4b", "label": "Qwen3 4B", "uses": ["answer"], "size_gb": 2.5, "min_ram_gb": 8,
+     "note": "Good balance for 8 GB laptops."},
+    {"name": "gemma3:4b", "label": "Gemma 3 4B", "uses": ["answer", "image"], "size_gb": 3.3, "min_ram_gb": 8,
+     "note": "Small model that can read photos."},
+    {"name": "qwen3:1.7b", "label": "Qwen3 1.7B", "uses": ["answer"], "size_gb": 1.4, "min_ram_gb": 4,
+     "note": "Fastest; for low-memory laptops."},
+    {"name": EMBED_MODEL, "label": "EmbeddingGemma", "uses": ["embed"], "size_gb": 0.6, "min_ram_gb": 2,
+     "note": "Needed for meaning-based search."},
+]
+_RECOMMENDED_NAMES = {r["name"] for r in RECOMMENDED}
+
+
+def ram_gb() -> float | None:
+    """Total physical memory, to say which models will run well here."""
+    try:
+        if os.name == "nt":
+            import ctypes
+
+            class _Mem(ctypes.Structure):
+                _fields_ = [("len", ctypes.c_ulong), ("load", ctypes.c_ulong), ("total", ctypes.c_ulonglong),
+                            ("avail", ctypes.c_ulonglong), ("pt", ctypes.c_ulonglong), ("pa", ctypes.c_ulonglong),
+                            ("vt", ctypes.c_ulonglong), ("va", ctypes.c_ulonglong), ("ve", ctypes.c_ulonglong)]
+            m = _Mem()
+            m.len = ctypes.sizeof(_Mem)
+            ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(m))
+            return round(m.total / 2**30, 1)
+        return round(os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 2**30, 1)
+    except Exception:
+        return None
+
+
+def _models_dir():
+    from pathlib import Path
+    return Path(os.environ.get("OLLAMA_MODELS") or Path.home() / ".ollama" / "models")
+
+
+def downloaded() -> list[dict]:
+    """Local models with sizes. Asks Ollama when it is up, else reads its model folder on disk."""
+    _refresh()
+    out: dict[str, float | None] = {}
+    if _state["up"]:
+        try:
+            for m in _client.list().models:
+                if not m.model.endswith("-cloud"):
+                    out[m.model] = round((m.size or 0) / 1e9, 1) or None
+        except Exception:
+            pass
+    else:
+        lib = _models_dir() / "manifests" / "registry.ollama.ai" / "library"
+        for f in lib.glob("*/*") if lib.is_dir() else []:
+            try:
+                size = sum(layer.get("size", 0) for layer in json.loads(f.read_text(encoding="utf-8")).get("layers", []))
+            except (OSError, ValueError):
+                continue
+            out[f"{f.parent.name}:{f.name}"] = round(size / 1e9, 1) or None
+    return [{"name": n, "size_gb": s, "embed": "embed" in n} for n, s in sorted(out.items())]
+
+
+def recommended(have: set[str]) -> list[dict]:
+    ram = ram_gb()
+    return [{**r, "installed": _installed(r["name"], have), "fits": ram is None or ram >= r["min_ram_gb"]} for r in RECOMMENDED]
+
+
+# Model downloads run in the background; the UI polls GET /api/llm for progress.
+pulls: dict[str, dict] = {}
+
+
+def pull(model: str) -> dict:
+    import threading
+    model = str(model or "").strip()
+    if model not in _RECOMMENDED_NAMES:
+        raise ValueError("Pick one of the recommended models to download.")
+    if pulls.get(model, {}).get("state") == "downloading":
+        return pulls[model]
+    if not reachable():
+        raise ValueError("Start Ollama first, then download the model.")
+    pulls[model] = {"state": "downloading", "status": "Starting…", "completed": 0, "total": 0, "error": None}
+
+    def work():
+        p = pulls[model]
+        try:
+            for ev in _client.pull(model, stream=True):
+                p["status"] = ev.status or p["status"]
+                if ev.total:
+                    p["total"], p["completed"] = ev.total, ev.completed or 0
+            p.update(state="done", status="Downloaded")
+        except Exception as e:  # network drop, disk full, unknown tag
+            p.update(state="error", error=str(e) or "Download failed")
+        finally:
+            _caps.pop(model, None)
+            _refresh(force=True)
+
+    threading.Thread(target=work, daemon=True, name=f"pull-{model}").start()
+    return pulls[model]
