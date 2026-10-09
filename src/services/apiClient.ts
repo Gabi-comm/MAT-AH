@@ -32,7 +32,7 @@ export function apiUrl(path: string, params?: Record<string, string | number | u
 }
 
 interface RequestOpts {
-  method?: "GET" | "POST" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "DELETE";
   body?: unknown;
   params?: Record<string, string | number | undefined | null>;
   signal?: AbortSignal;

@@ -157,6 +157,28 @@ export interface SystemStatus {
   vision_model?: string | null;
 }
 
+/** Settings > Local LLM. "" model = automatic. */
+export interface LlmConfig {
+  host: string;
+  chat_model: string;
+  vision_model: string;
+  num_ctx: number;
+  keep_alive: string;
+}
+
+/** GET /api/llm, PUT /api/llm */
+export interface LlmInfo {
+  config: LlmConfig;
+  defaults: LlmConfig;
+  auto_order: string[];
+  up: boolean;
+  installed: string[];
+  chat_model: string | null;
+  vision_model: string | null;
+  embed_model: string;
+  embed_installed: boolean;
+}
+
 /** GET /api/linis */
 export interface LinisRef {
   id: number | null;

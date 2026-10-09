@@ -18,6 +18,8 @@ import type {
   FileRef,
   IndexProgress,
   LinisReport,
+  LlmConfig,
+  LlmInfo,
   Proposal,
   RootFolder,
   SearchHit,
@@ -160,6 +162,18 @@ function store(requestText: string, plan: Proposal["plan"]): Proposal {
   return structuredClone(p);
 }
 
+const LLM_DEFAULTS: LlmConfig = { host: "http://127.0.0.1:11434", chat_model: "", vision_model: "", num_ctx: 8192, keep_alive: "1h" };
+let llmConfig: LlmConfig = { ...LLM_DEFAULTS };
+
+function llmInfo(): LlmInfo {
+  const installed = ["demo-model", "demo-vision", "demo-embed"];
+  return {
+    config: { ...llmConfig }, defaults: { ...LLM_DEFAULTS }, auto_order: ["demo-model"], up: true, installed,
+    chat_model: llmConfig.chat_model || "demo-model", vision_model: llmConfig.vision_model || "demo-vision",
+    embed_model: "demo-embed", embed_installed: true,
+  };
+}
+
 function getP(pid: number): Proposal {
   const p = proposals.find((x) => x.id === pid);
   if (!p) throw new ApiError(404, "Unknown proposal");
@@ -173,6 +187,11 @@ export const demoBackend: Backend = {
       online: false, ollama: true, chat_model: "demo-model", embed_model: "demo-embed", loaded: ["demo-model"],
       cloud_models: [], ocr: "RapidOCR (ONNX)", vectors: 42, files: { pdf: 6, image: 4 }, last: {}, indexing: indexing.running,
     }), signal),
+  llm: (_refresh, signal) => wait(120, llmInfo, signal),
+  setLlm: (patch) => wait(200, () => {
+    llmConfig = { ...llmConfig, ...patch };
+    return llmInfo();
+  }),
   roots: (signal) =>
     wait(100, (): RootFolder[] => [{ id: 1, path: ROOT, added_at: "2026-10-01T09:00:00", files: FILES.length, name: "MAT-AH Demo" }], signal),
   addRoot: () => wait(300, () => ({ cancelled: true as const })),

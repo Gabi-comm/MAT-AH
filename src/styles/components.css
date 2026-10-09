@@ -1380,6 +1380,66 @@ details.tech pre {
   grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
   gap: 16px;
   align-items: start;
+  /* The open Iris card spans the full row; dense lets the next card fill the gap it leaves. */
+  grid-auto-flow: row dense;
+}
+
+/* Iris card, collapsed: avatar, what is set, and the Customize button on one line. */
+.iris-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.iris-summary-avatar {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  flex: none;
+  border-radius: 18px;
+  background: radial-gradient(60% 60% at 50% 65%, rgba(168, 85, 247, 0.28), transparent 75%), var(--surface-sunken);
+  border: 1px solid var(--border);
+}
+
+.iris-summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 140px;
+  min-width: 0;
+  font-size: var(--fs-small);
+}
+
+.iris-summary-text .subtle {
+  font-size: var(--fs-caption);
+}
+
+/* Iris card, open: full width, preview pinned beside the options. */
+.iris-card.is-open {
+  grid-column: 1 / -1;
+}
+
+.iris-customize {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.iris-customize-preview {
+  position: sticky;
+  top: 16px;
+}
+
+@media (max-width: 760px) {
+  .iris-customize {
+    grid-template-columns: 1fr;
+  }
+  .iris-customize-preview {
+    position: static;
+  }
 }
 
 .setting-row {
@@ -1391,6 +1451,48 @@ details.tech pre {
   min-height: 44px;
   font-size: var(--fs-small);
   font-weight: 500;
+}
+
+.llm-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 16px;
+}
+
+select.input {
+  padding-right: 36px;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 18px center, right 13px center;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+select.input option {
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+}
+
+.llm-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.llm-dot::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-tertiary, currentColor);
+}
+
+.llm-dot.is-up::before {
+  background: var(--success, #3fb27f);
 }
 
 .switch {

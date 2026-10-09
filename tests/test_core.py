@@ -157,3 +157,23 @@ def test_verifier_allows_numbers_from_the_question():
     from backend.sagot import verify
     assert verify("Chapter 1 says the deadline is October 24, 2026 [1].", SRC, "Ano ang chapter 1?")[0]
     assert not verify("Chapter 2 says the deadline is October 24, 2026 [1].", SRC, "Ano ang chapter 1?")[0]
+
+
+def test_llm_config_validates_saves_and_picks_models(tmp_path, monkeypatch):
+    from backend import llm
+    monkeypatch.setattr(llm, "CONFIG_PATH", tmp_path / "llm.json")
+    monkeypatch.setattr(llm, "_cfg", dict(llm.DEFAULTS))
+    monkeypatch.setattr(llm, "_refresh", lambda force=False: None)
+    monkeypatch.setitem(llm._state, "models", ["qwen3:8b", "llava:7b", "gpt-oss:120b-cloud"])
+    for bad in ({"host": "not a url"}, {"chat_model": "gpt-oss:120b-cloud"}, {"num_ctx": 100},
+                {"keep_alive": "forever"}, {"temperature": 1}):
+        with pytest.raises(ValueError):
+            llm.set_config(bad)
+    assert llm.chat_model() == "qwen3:8b"  # auto
+    llm.set_config({"chat_model": "llava:7b", "num_ctx": 4096, "keep_alive": "-1", "host": "http://127.0.0.1:11434/"})
+    assert llm.chat_model() == "llava:7b"
+    assert llm._opts(0.1)["num_ctx"] == 4096 and llm._keep_alive() == -1
+    saved = json.loads((tmp_path / "llm.json").read_text(encoding="utf-8"))
+    assert saved["chat_model"] == "llava:7b" and saved["host"] == "http://127.0.0.1:11434"
+    llm.set_config({"chat_model": "missing:1b"})
+    assert llm.chat_model() is None  # a pinned model that isn't installed is not silently swapped

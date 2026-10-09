@@ -1,6 +1,14 @@
 import { vi } from "vitest";
 import type { Backend } from "../services/backend";
-import type { FileRef, Proposal, SearchHit, SearchResponse } from "../services/types";
+import type { FileRef, LlmConfig, LlmInfo, Proposal, SearchHit, SearchResponse } from "../services/types";
+
+const LLM_DEFAULTS: LlmConfig = { host: "http://127.0.0.1:11434", chat_model: "", vision_model: "", num_ctx: 8192, keep_alive: "1h" };
+
+export function llmInfo(config: Partial<LlmConfig> = {}): LlmInfo {
+  const c = { ...LLM_DEFAULTS, ...config };
+  return { config: c, defaults: LLM_DEFAULTS, auto_order: ["m"], up: true, installed: ["m", "big:8b"],
+    chat_model: c.chat_model || "m", vision_model: c.vision_model || null, embed_model: "e", embed_installed: true };
+}
 
 export function file(id: number, name: string, kind = "image"): FileRef {
   return { id, name, path: `C:\\Users\\T\\Pictures\\${name}`, ext: ".jpg", kind, size: 1000, mtime: 1_760_000_000, taken_at: null };
@@ -28,6 +36,8 @@ export function fakeBackend(over: Partial<Backend> = {}): Backend {
   const base: Backend = {
     isDemo: false,
     status: vi.fn(async () => ({ online: false, ollama: true, chat_model: "m", embed_model: "e", loaded: [], cloud_models: [], ocr: "x", vectors: 0, files: { image: 2 }, last: {}, indexing: false })),
+    llm: vi.fn(async () => llmInfo()),
+    setLlm: vi.fn(async (patch) => llmInfo(patch)),
     roots: vi.fn(async () => [{ id: 1, path: "C:\\Users\\T", added_at: "2026-10-10", files: 2, name: "T" }]),
     addRoot: vi.fn(async () => ({ cancelled: true as const })),
     addComputer: vi.fn(async () => ({ added: [] })),

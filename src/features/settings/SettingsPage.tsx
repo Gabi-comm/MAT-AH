@@ -3,12 +3,15 @@ import { AppShell } from "../../components/layout/AppShell";
 import { Notice, Progress, Skeleton, useToast } from "../../components/feedback/Feedback";
 import { Icon } from "../../components/Icon";
 import { useStatus } from "../../hooks/StatusContext";
+import { Iris } from "../../mascot/Iris";
+import { ACCESSORY_LABELS, EXPRESSION_LABELS, IRIS_PRESETS } from "../../mascot/irisPresets";
 import { usePrefs } from "../../prefs/PrefsContext";
 import type { ThemePref } from "../../prefs/preferences";
 import { useBackend } from "../../services/BackendContext";
 import { isAbort } from "../../services/apiClient";
 import { indexPhaseText, plural } from "../../services/normalize";
 import type { RootFolder } from "../../services/types";
+import { LocalLlmSettings } from "./LocalLlmSettings";
 
 const IrisCustomization = lazy(() => import("../../mascot/IrisCustomization"));
 
@@ -183,7 +186,7 @@ function Folders() {
 }
 
 export function SettingsPage({ section }: { section?: string }) {
-  const { prefs, update } = usePrefs();
+  const { prefs, update, resolvedTheme } = usePrefs();
   const { status } = useStatus();
   const [customizing, setCustomizing] = useState(section === "iris");
 
@@ -208,12 +211,23 @@ export function SettingsPage({ section }: { section?: string }) {
           </label>
         </section>
 
-        <section className="card stack gap-3" aria-labelledby="iris-h">
+        <section className={`card stack gap-3${customizing ? " iris-card is-open" : " iris-card"}`} aria-labelledby="iris-h">
           <h2 id="iris-h" className="card-title">Iris</h2>
           {!customizing && (
-            <button className="btn btn-line" style={{ alignSelf: "flex-start" }} onClick={() => setCustomizing(true)}>
-              <Icon name="palette" /> Customize Iris
-            </button>
+            <div className="iris-summary">
+              <div className="iris-summary-avatar" aria-hidden="true">
+                <Iris preset={prefs.iris.preset} accessory={prefs.iris.accessory} expression={prefs.iris.expression} size={52} theme={resolvedTheme} state="idle" />
+              </div>
+              <div className="iris-summary-text">
+                <strong>{IRIS_PRESETS.find((p) => p.id === prefs.iris.preset)?.name}</strong>
+                <span className="subtle">
+                  {prefs.iris.accessory === "none" ? "No accessory" : ACCESSORY_LABELS[prefs.iris.accessory]} · {EXPRESSION_LABELS[prefs.iris.expression]} expression
+                </span>
+              </div>
+              <button className="btn btn-line" onClick={() => setCustomizing(true)}>
+                <Icon name="palette" /> Customize Iris
+              </button>
+            </div>
           )}
           {customizing && (
             <Suspense fallback={<Skeleton h={240} />}>
@@ -224,8 +238,10 @@ export function SettingsPage({ section }: { section?: string }) {
 
         <Folders />
 
+        <LocalLlmSettings />
+
         <section className="card stack gap-3" aria-labelledby="ai-h">
-          <h2 id="ai-h" className="card-title">Local AI</h2>
+          <h2 id="ai-h" className="card-title">AI status</h2>
           {!status && <Skeleton h={80} />}
           {status && (
             <dl className="kv">
