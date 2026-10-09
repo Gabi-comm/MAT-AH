@@ -1,5 +1,5 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
-import { MatahSymbol, MatahWordmark } from "../../branding/MatahLogo";
+import { MatahAppIcon, MatahWordmark } from "../../branding/MatahLogo";
 import { useStatus } from "../../hooks/StatusContext";
 import { hrefFor, type Page } from "../../hooks/useRoute";
 import { withViewTransition } from "../../hooks/viewTransition";
@@ -148,10 +148,8 @@ export function AppShell({
       </a>
       <nav className="rail" id="main-nav" aria-label="Main">
         <a className="rail-brand" href={hrefFor("home")} aria-label="MAT-AH home">
-          <span className="row gap-2">
-            <MatahSymbol size={30} tone="light" />
-            <MatahWordmark className="rail-wordmark" height={17} style={{ color: "#F4F0F7" }} />
-          </span>
+          <MatahAppIcon size={36} className="rail-mark" aria-hidden="true" />
+          <MatahWordmark className="rail-wordmark" height={18} />
         </a>
         <NavLink def={{ page: "home", label: "Home", icon: "home" }} current={page} />
         <div className="rail-group">Discover</div>
@@ -168,7 +166,10 @@ export function AppShell({
       <div className="main">
         <header className="topbar">
           <SidebarToggle />
-          <div className="topbar-title">{title}</div>
+          <div className="topbar-title">
+            <span className="title-seam" aria-hidden="true" />
+            {title}
+          </div>
           {backend.isDemo && <span className="demo-badge">Demo data</span>}
           <div className="row gap-2" style={{ marginLeft: "auto", alignItems: "flex-end" }}>
             <ThemeToggle />

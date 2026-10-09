@@ -182,12 +182,20 @@ export function SettingsPage({ section }: { section?: string }) {
   const { prefs, resolvedTheme } = usePrefs();
   const { status } = useStatus();
   const [customizing, setCustomizing] = useState(section === "iris");
+  const [opened, setOpened] = useState(customizing);
 
   return (
     <AppShell page="settings" title="Settings">
       <div className="settings-grid">
         <section className={`card stack gap-3 iris-card${customizing ? " is-open" : ""}`} aria-labelledby="iris-h">
-          <h2 id="iris-h" className="card-title">Iris</h2>
+          <div className="row gap-3" style={{ justifyContent: "space-between", alignItems: "center" }}>
+            <h2 id="iris-h" className="card-title">Iris</h2>
+            {customizing && (
+              <button className="btn btn-ghost btn-sm" onClick={() => setCustomizing(false)} aria-controls="iris-customize" aria-expanded="true">
+                <Icon name="chevronUp" size={16} /> Minimize
+              </button>
+            )}
+          </div>
           {!customizing && (
             <div className="iris-summary">
               <div className="iris-summary-avatar" aria-hidden="true">
@@ -199,15 +207,18 @@ export function SettingsPage({ section }: { section?: string }) {
                   {prefs.iris.accessory === "none" ? "No accessory" : ACCESSORY_LABELS[prefs.iris.accessory]} · {EXPRESSION_LABELS[prefs.iris.expression]} expression
                 </span>
               </div>
-              <button className="btn btn-line" onClick={() => setCustomizing(true)}>
+              <button className="btn btn-line" onClick={() => { setOpened(true); setCustomizing(true); }}>
                 <Icon name="palette" /> Customize Iris
               </button>
             </div>
           )}
-          {customizing && (
-            <Suspense fallback={<Skeleton h={240} />}>
-              <IrisCustomization onDone={() => setCustomizing(false)} />
-            </Suspense>
+          {/* Stays mounted once opened, so minimizing keeps unsaved picks. */}
+          {opened && (
+            <div id="iris-customize" hidden={!customizing}>
+              <Suspense fallback={<Skeleton h={240} />}>
+                <IrisCustomization onDone={() => setCustomizing(false)} />
+              </Suspense>
+            </div>
           )}
         </section>
 

@@ -48,6 +48,17 @@ describe("Settings: Iris customization", () => {
     expect(stored().iris).toMatchObject({ preset: "classic", accessory: "none", expression: "classic" });
   });
 
+  it("minimizes the open Iris editor and keeps unsaved picks", async () => {
+    render(<App backend={fakeBackend()} startup={false} />);
+    await userEvent.click(screen.getByRole("button", { name: /Customize Iris/ }));
+    await userEvent.click(within(await screen.findByRole("radiogroup", { name: "Iris colour" })).getByRole("radio", { name: /Ube Iris/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Minimize/ }));
+    expect(screen.queryByRole("radiogroup", { name: "Iris colour" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Minimize/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Customize Iris/ }));
+    expect(within(screen.getByRole("radiogroup", { name: "Iris colour" })).getByRole("radio", { name: /Ube Iris/ })).toBeChecked();
+  });
+
   it("preview buttons animate locally without calling the backend", async () => {
     const backend = fakeBackend();
     render(<App backend={backend} startup={false} />);

@@ -50,7 +50,10 @@ export function HomePage({ navigate }: { navigate: (p: Page, params?: Record<str
   return (
     <AppShell page="home" title="Home">
       <section className="hero" aria-labelledby="home-h">
-        <div className="hero-orb">
+        <div className="hero-stage">
+          <span className="spot spot-l" aria-hidden="true" />
+          <span className="spot spot-r" aria-hidden="true" />
+          <span className="spot-pool" aria-hidden="true" />
           <IrisCompanion size={76} />
         </div>
         <div className="stack gap-2">

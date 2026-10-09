@@ -97,6 +97,9 @@
   color-scheme: dark;
   --background: var(--c-void);
   --canvas: #020104;
+  --spot-core: rgba(255, 236, 214, 0.55);
+  --spot-mid: rgba(255, 196, 170, 0.16);
+  --spot-blend: screen;
   --aurora-warm: rgba(236, 170, 160, 0.85);
   --aurora-purple: rgba(150, 100, 200, 0.7);
   --aurora-indigo: rgba(52, 30, 130, 0.75);
@@ -152,6 +155,9 @@
   color-scheme: light;
   --background: #1a1220;
   --canvas: #f1ecf5;
+  --spot-core: rgba(255, 214, 170, 0.6);
+  --spot-mid: rgba(255, 190, 150, 0.2);
+  --spot-blend: normal;
   --aurora-warm: rgba(244, 190, 176, 0.75);
   --aurora-purple: rgba(196, 160, 232, 0.55);
   --aurora-indigo: rgba(150, 130, 220, 0.3);

@@ -110,13 +110,39 @@
   }
 }
 
+/* Brand: the app-icon tile, then the wordmark. On hover the ember seam opens a little:
+   the identity's "the hyphen is the opening", as a quiet response to the pointer. */
 .rail-brand {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 4px 10px 18px;
+  gap: 12px;
+  padding: 2px 8px 20px;
   color: var(--rail-text);
   text-decoration: none;
+  border-radius: 14px;
+}
+
+.rail-mark {
+  flex: none;
+  border-radius: 10px;
+  box-shadow: 0 6px 14px -6px rgba(40, 12, 90, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.rail-wordmark {
+  color: var(--rail-text);
+  /* The letters sit on the cap-height midline; nudge so they centre on the tile optically. */
+  margin-top: 1px;
+}
+
+.rail-wordmark .logo-seam {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 280ms var(--ease-aperture);
+}
+
+.rail-brand:hover .rail-wordmark .logo-seam,
+.rail-brand:focus-visible .rail-wordmark .logo-seam {
+  transform: scaleX(1.35);
 }
 
 .rail-group {
@@ -275,15 +301,36 @@ html.theme-vt::view-transition-new(root) {
   min-height: 76px;
 }
 
+/* Page title: display face at a real heading size, led by the logo's ember seam. */
 .topbar-title {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 20px;
-  letter-spacing: -0.01em;
+  font-size: clamp(22px, 1.4vw + 12px, 28px);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.title-seam {
+  flex: none;
+  width: 16px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--c-ember);
+  transform-origin: left center;
+  animation: title-seam 520ms var(--ease-aperture) both;
+}
+
+@keyframes title-seam {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 .page {
@@ -1866,7 +1913,9 @@ legend {
   padding: clamp(16px, 6vh, 64px) 0 8px;
 }
 
-.hero-orb {
+/* Iris on stage: two spotlights pan in from the upper left and right and
+   settle on her, then sway gently. At rest (motion off) they simply point at her. */
+.hero-stage {
   position: relative;
   display: grid;
   place-items: center;
@@ -1874,26 +1923,58 @@ legend {
   height: 132px;
 }
 
-.hero-orb::before {
-  content: "";
+.spot {
+  --aim: -48deg;
+  --from: -12deg;
   position: absolute;
-  inset: 8px;
-  border-radius: 50%;
-  background:
-    radial-gradient(40% 35% at 35% 28%, rgba(255, 255, 255, 0.55), transparent 70%),
-    radial-gradient(circle at 50% 60%, #8b4cf7 0%, #5b21b6 55%, #2a1052 100%);
-  box-shadow: 0 0 60px rgba(168, 85, 247, 0.55), inset 0 -10px 30px rgba(20, 0, 40, 0.6);
-  opacity: 0.9;
-  animation: orb-float 6s ease-in-out infinite;
+  top: calc(50% - 150px);
+  left: calc(50% - 170px - 80px);
+  width: 160px;
+  height: 260px;
+  transform-origin: 50% 0;
+  transform: rotate(var(--aim));
+  /* A soft-edged cone from the lamp at the top, fading out toward the floor. */
+  background: conic-gradient(from 165deg at 50% 0%, transparent 0deg, var(--spot-mid) 6deg, var(--spot-core) 15deg, var(--spot-mid) 24deg, transparent 30deg);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 72%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 72%, transparent 100%);
+  mix-blend-mode: var(--spot-blend);
+  pointer-events: none;
+  animation:
+    spot-pan 2800ms cubic-bezier(0.45, 0, 0.2, 1) 200ms both,
+    spot-sway 6s ease-in-out 3000ms infinite alternate;
 }
 
-.hero-orb .companion {
+.spot-r {
+  --aim: 48deg;
+  --from: 12deg;
+  left: calc(50% + 170px - 80px);
+  animation-delay: 420ms, 3220ms;
+  animation-duration: 2800ms, 7s;
+}
+
+/* The pool of light under Iris, warming up as the beams arrive. */
+.spot-pool {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 190px;
+  height: 46px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--spot-core), var(--spot-mid) 55%, transparent);
+  filter: blur(4px);
+  mix-blend-mode: var(--spot-blend);
+  pointer-events: none;
+  animation: spot-pool-in 1000ms var(--ease-settle) 2200ms both;
+}
+
+.hero-stage .companion {
   margin: 0;
   min-height: 0;
   position: relative;
 }
 
-.hero-orb .bubble {
+.hero-stage .bubble {
   position: absolute;
   bottom: 100%;
   left: 50%;
@@ -1901,8 +1982,24 @@ legend {
   margin-bottom: 6px;
 }
 
-.hero-orb .bubble::after {
+.hero-stage .bubble::after {
   display: none;
+}
+
+@keyframes spot-pan {
+  from { transform: rotate(var(--from)); opacity: 0; }
+  25% { opacity: 1; }
+  to { transform: rotate(var(--aim)); opacity: 1; }
+}
+
+@keyframes spot-sway {
+  from { transform: rotate(var(--aim)); }
+  to { transform: rotate(calc(var(--aim) * 0.9)); }
+}
+
+@keyframes spot-pool-in {
+  from { opacity: 0; transform: translateX(-50%) scaleX(0.6); }
+  to { opacity: 1; transform: translateX(-50%) scaleX(1); }
 }
 
 .hero h1 {

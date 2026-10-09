@@ -489,11 +489,6 @@
 .nav-iris .ns-gear { transform-origin: 64px 10px; animation: ns-gear 4s linear infinite; }
 
 /* Home orb */
-@keyframes orb-float {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-6px) scale(1.03); }
-}
-
 /* State to animation mapping (full motion). */
 .iris[data-state="idle"] .iris-body { animation: iris-breathe 3200ms ease-in-out infinite; }
 .iris[data-state="idle"] .iris-face { animation: iris-blink 5600ms ease-in-out infinite; }
@@ -550,7 +545,7 @@
 /* Pause everything decorative while the window is hidden. */
 :root.is-hidden .iris *,
 :root.is-hidden .nav-iris *,
-:root.is-hidden .hero-orb::before,
+:root.is-hidden .spot,
 :root.is-hidden .skeleton {
   animation-play-state: paused !important;
 }
