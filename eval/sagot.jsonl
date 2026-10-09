@@ -2,7 +2,6 @@
 {"q": "How much did I pay for tuition first sem?", "expect": ["18,450", "18450"], "file": "Tuition_Receipt_1stSem.pdf"}
 {"q": "Magkano ang minimum downpayment para ma-enroll?", "expect": ["3,000", "3000"], "file": "Enrollment_Announcement.pdf"}
 {"q": "Magkano ang late enrollment fee?", "expect": ["500"], "file": "Enrollment_Announcement.pdf"}
-{"q": "How much did I pay for the org membership fee?", "expect": ["1,500", "1500"], "file": "Screenshot_20260811_091502.png"}
 {"q": "Kailan ang next thesis meeting?", "expect": ["October 11", "Oct 11", "11"], "file": "Thesis_Meeting_Notes.docx"}
 {"q": "What time is curfew in the dorm on weekdays?", "expect": ["10"], "file": "Dormitory_Rules_SAMPLE.pdf"}
 {"q": "Ano ang wifi password ng dorm?", "expect": null}

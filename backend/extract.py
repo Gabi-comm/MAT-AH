@@ -3,11 +3,19 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
+from .media import AUDIO_EXT, VIDEO_EXT
+
 KINDS = {
-    ".pdf": "pdf", ".docx": "docx", ".pptx": "pptx",
-    ".txt": "text", ".md": "text", ".csv": "text",
-    ".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "image", ".bmp": "image",
+    ".pdf": "pdf", ".docx": "docx", ".pptx": "pptx", ".xlsx": "sheet",
+    ".txt": "text", ".md": "text", ".csv": "text", ".rtf": "text", ".log": "text",
+    ".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "image", ".bmp": "image", ".gif": "image",
+    **{e: "video" for e in VIDEO_EXT},
+    **{e: "audio" for e in AUDIO_EXT},
 }
+# Read the inside of a file only within these sizes; everything else is still findable by name.
+MAX_BYTES = {"pdf": 150 << 20, "docx": 60 << 20, "pptx": 200 << 20, "sheet": 30 << 20, "text": 5 << 20,
+             "image": 40 << 20, "video": 8 << 30, "audio": 1 << 30}
+MIN_IMAGE_BYTES = 12 << 10  # smaller images are icons and UI assets, not photos or screenshots
 
 _ocr = None
 _ocr_lock = threading.Lock()
@@ -15,6 +23,13 @@ _ocr_lock = threading.Lock()
 
 def kind_of(path: Path) -> str:
     return KINDS.get(path.suffix.lower(), "other")
+
+
+def readable(kind: str, size: int) -> bool:
+    """Whether MAT-AH should open this file and read its content (vs. name and metadata only)."""
+    if kind not in MAX_BYTES or size == 0 or size > MAX_BYTES[kind]:
+        return False
+    return not (kind == "image" and size < MIN_IMAGE_BYTES)
 
 
 def ocr_engine():
@@ -81,6 +96,24 @@ def extract_pptx(path: Path) -> list[dict]:
     return units
 
 
+def extract_xlsx(path: Path) -> list[dict]:
+    from openpyxl import load_workbook
+    wb = load_workbook(str(path), read_only=True, data_only=True)
+    units = []
+    for ws in wb.worksheets[:20]:
+        rows = []
+        for row in ws.iter_rows(values_only=True, max_row=2000):
+            cells = [str(c) for c in row if c is not None and str(c).strip()]
+            if cells:
+                rows.append(" | ".join(cells))
+        if rows:
+            units.append({"text": f"[{ws.title}]
+" + "
+".join(rows), "locator": {"sheet": ws.title}})
+    wb.close()
+    return units
+
+
 def extract_text(path: Path) -> list[dict]:
     raw = path.read_bytes()
     for enc in ("utf-8", "utf-16", "cp1252"):
@@ -120,6 +153,8 @@ def extract(path: Path) -> tuple[str, list[dict], str | None]:
         units = extract_pptx(path)
     elif kind == "text":
         units = extract_text(path)
+    elif kind == "sheet":
+        units = extract_xlsx(path)
     elif kind == "image":
         units, taken = extract_image(path)
     else:

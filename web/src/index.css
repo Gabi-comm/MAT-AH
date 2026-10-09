@@ -253,7 +253,8 @@ main {
   height: 100%;
   background: var(--blue);
   border-radius: 3px;
-  transition: width 0.3s;
+  transform-origin: left;
+  transition: transform 0.3s;
 }
 .progress small {
   position: absolute;
@@ -601,8 +602,8 @@ main {
 .answer {
   margin: 0 0 26px;
   background: var(--sheet);
-  border-left: 5px solid var(--blue);
-  border-radius: 0 var(--radius-m) var(--radius-m) 0;
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius-m);
   padding: 20px 24px;
   font-size: 22px;
   line-height: 1.55;
@@ -637,7 +638,7 @@ main {
   color: #18202c;
 }
 .answer.insufficient {
-  border-left-color: var(--warn);
+  border-style: dashed;
   font-size: 16px;
 }
 .answer.insufficient h3 {
@@ -737,8 +738,9 @@ main {
   font-size: 13px;
 }
 .dup {
-  border-left: 3px solid var(--rule);
-  padding: 4px 0 4px 14px;
+  background: var(--sheet);
+  border-radius: var(--radius-s);
+  padding: 6px 14px;
   margin-bottom: 10px;
 }
 .keep {

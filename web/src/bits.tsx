@@ -179,7 +179,7 @@ export function Rail({
         {err && <p className="error">{err}</p>}
         {running && (
           <div className="progress" aria-label="Indexing progress">
-            <div style={{ width: `${pct}%` }} />
+            <div style={{ transform: `scaleX(${pct / 100})` }} />
             <small>
               Reading {progress!.current || '…'} ({progress!.done}/{progress!.total})
             </small>

@@ -40,10 +40,10 @@ def chunk(path: Path, kind: str, units: list[dict]) -> list[dict]:
             continue
         if not text:
             continue
-        size = PAGE_MAX if ("page" in loc or "slide" in loc) else TEXT_SIZE
+        size = PAGE_MAX if ("page" in loc or "slide" in loc or "t" in loc) else TEXT_SIZE
         for a, b in _split(text, size):
             l = dict(loc)
-            if not loc:
+            if not loc or "sheet" in loc:
                 l["chars"] = [a, b]
             chunks.append({"text": text[a:b], "locator": l})
     if not chunks:  # metadata-only so the file is still findable by name

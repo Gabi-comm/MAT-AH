@@ -17,6 +17,9 @@ CREATE INDEX IF NOT EXISTS chunks_file ON chunks(file_id);
 CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(chunk_id UNINDEXED, text, name, notes,
   tokenize = 'unicode61 remove_diacritics 2');
 CREATE TABLE IF NOT EXISTS vectors(chunk_id INTEGER PRIMARY KEY, model TEXT, dim INT, vec BLOB);
+CREATE TABLE IF NOT EXISTS visual(id INTEGER PRIMARY KEY, file_id INT, t REAL, model TEXT, vec BLOB);
+CREATE INDEX IF NOT EXISTS visual_file ON visual(file_id);
+CREATE INDEX IF NOT EXISTS files_status ON files(status);
 CREATE TABLE IF NOT EXISTS notes(id INTEGER PRIMARY KEY, file_id INT, text TEXT, created_at TEXT);
 CREATE TABLE IF NOT EXISTS proposals(id INTEGER PRIMARY KEY, request TEXT, plan_json TEXT,
   status TEXT, created_at TEXT);
@@ -35,6 +38,9 @@ def connect(path: Path | None = None) -> sqlite3.Connection:
     con.execute("PRAGMA journal_mode=WAL")
     con.execute("PRAGMA busy_timeout=8000")
     con.executescript(SCHEMA)
+    cols = {r[1] for r in con.execute("PRAGMA table_info(files)")}
+    if "described" not in cols:  # vision-model caption done (0/1)
+        con.execute("ALTER TABLE files ADD COLUMN described INT DEFAULT 0")
     return con
 
 
@@ -46,17 +52,22 @@ def delete_file_rows(con: sqlite3.Connection, file_id: int) -> None:
         con.execute(f"DELETE FROM vectors WHERE chunk_id IN ({q})", ids)
     con.execute("DELETE FROM chunks WHERE file_id=?", (file_id,))
     VECTORS.remove(ids)
+    vids = [r[0] for r in con.execute("SELECT id FROM visual WHERE file_id=?", (file_id,))]
+    if vids:
+        con.execute("DELETE FROM visual WHERE file_id=?", (file_id,))
+        VISUAL.remove(vids)
 
 
 class VectorStore:
-    """All chunk vectors as one normalized float32 matrix; search is one mat-vec product."""
+    """All vectors as one normalized float32 matrix; search is one mat-vec product."""
 
-    def __init__(self):
+    def __init__(self, sql: str = "SELECT chunk_id, dim, vec FROM vectors"):
+        self.sql = sql
         self.ids = np.zeros(0, dtype=np.int64)
         self.mat = np.zeros((0, 0), dtype=np.float32)
 
     def load(self, con: sqlite3.Connection) -> None:
-        rows = con.execute("SELECT chunk_id, dim, vec FROM vectors").fetchall()
+        rows = con.execute(self.sql).fetchall()
         with _lock:
             if not rows:
                 self.ids, self.mat = np.zeros(0, dtype=np.int64), np.zeros((0, 0), dtype=np.float32)
@@ -95,7 +106,8 @@ class VectorStore:
         return int(self.ids.size)
 
 
-VECTORS = VectorStore()
+VECTORS = VectorStore()  # text chunks (embeddinggemma), keyed by chunk id
+VISUAL = VectorStore("SELECT id, 0, vec FROM visual")  # images + video frames (CLIP), keyed by visual id
 
 
 def normalize(v: np.ndarray) -> np.ndarray:

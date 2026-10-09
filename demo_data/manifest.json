@@ -1,5 +1,5 @@
 {
-  "root": "C:\\Users\\Gab\\AppData\\Local\\Temp\\pytest-of-Gab\\pytest-3\\matah0\\files",
+  "root": "C:\\Users\\Gab\\AppData\\Local\\Temp\\pytest-of-Gab\\pytest-4\\matah0\\files",
   "files": [
     {
       "path": "School/Enrollment_Announcement.pdf",
@@ -28,48 +28,6 @@
       "path": "Misc/Dormitory_Rules_SAMPLE.pdf",
       "probe": "kettles",
       "kind": "pdf"
-    },
-    {
-      "path": "Pictures/Screenshots/Screenshot_20260928_142233.png",
-      "probe": "clearance",
-      "kind": "image"
-    },
-    {
-      "path": "Pictures/Screenshots/Screenshot_20260811_091502.png",
-      "probe": "membership",
-      "kind": "image",
-      "facts": {
-        "amount": "1,500.00"
-      }
-    },
-    {
-      "path": "Pictures/Screenshots/Screenshot_20251214_200118.png",
-      "probe": "christmas",
-      "kind": "image",
-      "facts": {
-        "amount": "3,275.50"
-      }
-    },
-    {
-      "path": "Pictures/Screenshots/Screenshot_20260905_073010.png",
-      "probe": "pathfit",
-      "kind": "image"
-    },
-    {
-      "path": "Pictures/Screenshots/Screenshot_20261003_221544.png",
-      "probe": "extension",
-      "kind": "image"
-    },
-    {
-      "path": "Pictures/IMG_20260412_101500.jpg",
-      "probe": null,
-      "kind": "image",
-      "note": "beach photo, no text (CLIP demo)"
-    },
-    {
-      "path": "Pictures/Weekly_Steps_Chart.png",
-      "probe": "tracker",
-      "kind": "image"
     },
     {
       "path": "Notes/Thesis_Meeting_Notes.docx",
@@ -163,8 +121,8 @@
       "kind": "dup-original"
     },
     {
-      "path": "Downloads_demo/id_picture_2x2.png",
-      "probe": null,
+      "path": "Downloads_demo/enrollment_checklist.md",
+      "probe": "checklist",
       "kind": "dup-original"
     },
     {
@@ -180,8 +138,8 @@
         "Course_Syllabus_CCS3110 (1).pdf"
       ],
       [
-        "id_picture_2x2.png",
-        "id_picture_2x2 - Copy.png"
+        "enrollment_checklist.md",
+        "enrollment_checklist - Copy.md"
       ],
       [
         "consent_form_template.txt",

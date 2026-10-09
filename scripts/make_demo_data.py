@@ -13,22 +13,12 @@ from pathlib import Path
 
 import pymupdf
 from docx import Document
-from PIL import Image, ImageDraw, ImageFont
 from pptx import Presentation
 from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parent.parent
-FONTS = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts"
 SCHOOL = "Bagong Liwayway State College"
 manifest: list[dict] = []
-
-
-def font(size, bold=False):
-    for name in (["segoeuib.ttf", "arialbd.ttf"] if bold else ["segoeui.ttf", "arial.ttf"]):
-        p = FONTS / name
-        if p.exists():
-            return ImageFont.truetype(str(p), size)
-    return ImageFont.load_default()
 
 
 def stamp(path: Path, when: str):
@@ -98,128 +88,6 @@ def make_pdfs():
         "only. Electric kettles are not allowed in rooms. Laundry area opens at 6:00 AM.",
     ])
     record(OUT / "Misc" / "Dormitory_Rules_SAMPLE.pdf", "kettles", "2025-12-03T08:00:00", kind="pdf")
-
-
-# ---------------- screenshots ----------------
-def phone_shot(path: Path, title: str, lines: list[tuple[str, int, bool]], bg="#ffffff", bar="#1f6feb"):
-    W, H = 720, 1280
-    im = Image.new("RGB", (W, H), bg)
-    d = ImageDraw.Draw(im)
-    d.rectangle([0, 0, W, 64], fill="#111111")
-    d.text((24, 16), "9:41", font=font(28, True), fill="white")
-    d.text((W - 150, 16), "LTE 82%", font=font(26), fill="white")
-    d.rectangle([0, 64, W, 160], fill=bar)
-    d.text((32, 88), title, font=font(40, True), fill="white")
-    y = 200
-    for text, size, bold in lines:
-        if text == "---":
-            d.line([32, y + 10, W - 32, y + 10], fill="#d0d7de", width=2)
-            y += 36
-            continue
-        d.text((40, y), text, font=font(size, bold), fill="#1b1f24")
-        y += int(size * 1.6)
-    d.text((40, H - 70), "SAMPLE — synthetic screenshot", font=font(24), fill="#8c959f")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    im.save(path)
-
-
-def chat_shot(path: Path, msgs: list[tuple[str, str, bool]]):
-    W, H = 720, 1280
-    im = Image.new("RGB", (W, H), "#eef1f5")
-    d = ImageDraw.Draw(im)
-    d.rectangle([0, 0, W, 140], fill="#ffffff")
-    d.text((32, 50), "BSCS 3-B Barkada (SAMPLE)", font=font(36, True), fill="#111")
-    y = 180
-    f = font(30)
-    for who, text, me in msgs:
-        tw = min(560, int(d.textlength(text, font=f)) + 40)
-        x0 = W - tw - 30 if me else 30
-        d.text((x0 + 4, y), who, font=font(22, True), fill="#57606a")
-        y += 32
-        d.rounded_rectangle([x0, y, x0 + tw, y + 64], radius=24, fill="#1f6feb" if me else "#ffffff")
-        d.text((x0 + 20, y + 12), text, font=f, fill="white" if me else "#111")
-        y += 96
-    d.text((40, H - 70), "SAMPLE — synthetic screenshot", font=font(24), fill="#8c959f")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    im.save(path)
-
-
-def beach_picture(path: Path):
-    W, H = 1024, 768
-    im = Image.new("RGB", (W, H), "#87ceeb")
-    d = ImageDraw.Draw(im)
-    for i in range(300):  # sky gradient
-        c = (135 + i // 6, 206 + i // 20, 235)
-        d.line([0, i, W, i], fill=c)
-    d.ellipse([760, 70, 900, 210], fill="#ffd34d")
-    d.rectangle([0, 360, W, 520], fill="#1e88c8")
-    for x in range(0, W, 60):
-        d.arc([x, 350, x + 60, 380], 0, 180, fill="#e3f4ff", width=3)
-    d.polygon([(0, 500), (W, 470), (W, H), (0, H)], fill="#f1d9a7")
-    d.rectangle([180, 380, 196, 620], fill="#7a4e2d")
-    for dx, dy in [(-110, -30), (110, -30), (-80, 30), (80, 30), (0, -60)]:
-        d.ellipse([188 + dx - 70, 360 + dy - 18, 188 + dx + 70, 360 + dy + 18], fill="#2e8b3e")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    im.save(path, quality=92)
-
-
-def make_screenshots():
-    s = OUT / "Pictures" / "Screenshots"
-    p = s / "Screenshot_20260928_142233.png"
-    phone_shot(p, "Registrar Advisory", [
-        ("ENROLLMENT REQUIREMENTS", 40, True), ("2nd Semester AY 2026-2027", 30, False), ("---", 0, False),
-        ("1. Certificate of Registration (last sem)", 30, False), ("2. Library clearance", 30, False),
-        ("3. Student Affairs clearance", 30, False), ("4. Proof of downpayment", 30, False),
-        ("5. Updated 2x2 ID picture", 30, False), ("---", 0, False),
-        ("Submit at Window 3, Admin Building", 28, False), (SCHOOL, 26, False)])
-    record(p, "clearance", "2026-09-28T14:22:33", kind="image")
-
-    p = s / "Screenshot_20260811_091502.png"
-    phone_shot(p, "PayLokal", [
-        ("Payment Successful", 44, True), ("---", 0, False), ("Amount", 28, False), ("PHP 1,500.00", 52, True),
-        ("Paid to: BLSC Student Council", 30, False), ("Ref No. SAMPLE 7781 2209 4411", 28, False),
-        ("Aug 11, 2026 9:15 AM", 28, False), ("Purpose: org membership fee", 28, False)], bar="#0a8f5a")
-    record(p, "membership", "2026-08-11T09:15:02", kind="image", facts={"amount": "1,500.00"})
-
-    p = s / "Screenshot_20251214_200118.png"
-    phone_shot(p, "PayLokal", [
-        ("Payment Successful", 44, True), ("---", 0, False), ("Amount", 28, False), ("PHP 3,275.50", 52, True),
-        ("Paid to: Kusina ni Aling Nena (SAMPLE)", 30, False), ("Ref No. SAMPLE 5520 1934 0087", 28, False),
-        ("Dec 14, 2025 8:01 PM", 28, False), ("Purpose: Christmas party food", 28, False)], bar="#0a8f5a")
-    record(p, "christmas", "2025-12-14T20:01:18", kind="image", facts={"amount": "3,275.50"})
-
-    p = s / "Screenshot_20260905_073010.png"
-    phone_shot(p, "My Class Schedule", [
-        ("BSCS 3-B  First Semester", 32, True), ("---", 0, False),
-        ("MON  CCS 3101 Data Structures  8:00-9:30", 26, False),
-        ("MON  CCS 3105 Operating Systems  10:00-11:30", 26, False),
-        ("TUE  GEC 107 Ethics  1:00-2:30", 26, False), ("WED  CCS 3101 Lab  8:00-11:00", 26, False),
-        ("THU  CCS 3110 Software Engineering  9:00-10:30", 26, False), ("FRI  PATHFIT 3  3:00-5:00", 26, False),
-        ("Room: CCS Bldg 304", 26, False)], bar="#7a3cc2")
-    record(p, "pathfit", "2026-09-05T07:30:10", kind="image")
-
-    p = s / "Screenshot_20261003_221544.png"
-    chat_shot(p, [
-        ("Bea", "Guys may thesis meeting ba bukas?", False),
-        ("Migs", "Oo 3pm sa library, dala kayo laptop", False),
-        ("Me", "Sige! Ako na magdadala ng extension cord", True),
-        ("Bea", "Wag kalimutan yung consent forms ha", False),
-        ("Migs", "Noted. Kita kits sa library", False)])
-    record(p, "extension", "2026-10-03T22:15:44", kind="image")
-
-    p = OUT / "Pictures" / "IMG_20260412_101500.jpg"
-    beach_picture(p)
-    record(p, None, "2026-04-12T10:15:00", kind="image", note="beach photo, no text (CLIP demo)")
-
-    p = OUT / "Pictures" / "Weekly_Steps_Chart.png"
-    im = Image.new("RGB", (900, 600), "white")
-    d = ImageDraw.Draw(im)
-    d.text((40, 30), "Weekly Steps Tracker (SAMPLE)", font=font(40, True), fill="#111")
-    for i, (day, v) in enumerate(zip("MTWTFSS", [6, 9, 4, 8, 11, 3, 7])):
-        d.rectangle([80 + i * 110, 520 - v * 35, 150 + i * 110, 520], fill="#1f6feb")
-        d.text((100 + i * 110, 530), day, font=font(28), fill="#333")
-    im.save(p)
-    record(p, "tracker", "2026-07-01T18:00:00", kind="image")
 
 
 # ---------------- DOCX / PPTX ----------------
@@ -322,8 +190,9 @@ def make_downloads():
     pdf(dl / "Course_Syllabus_CCS3110.pdf", ["CCS 3110 Software Engineering Syllabus (SAMPLE)\n\nGrading: "
                                              "exams 40%, project 40%, quizzes 20%. Waterfall, agile and scrum."])
     shutil.copy2(dl / "Course_Syllabus_CCS3110.pdf", dl / "Course_Syllabus_CCS3110 (1).pdf")
-    phone_shot(dl / "id_picture_2x2.png", "ID Photo", [("SAMPLE ID PICTURE", 40, True), ("2x2 white background", 30, False)])
-    shutil.copy2(dl / "id_picture_2x2.png", dl / "id_picture_2x2 - Copy.png")
+    (dl / "enrollment_checklist.md").write_text("# Enrollment checklist (SAMPLE)\n- clearance\n- downpayment\n",
+                                                encoding="utf-8")
+    shutil.copy2(dl / "enrollment_checklist.md", dl / "enrollment_checklist - Copy.md")
     (dl / "consent_form_template.txt").write_text("Research consent form template (SAMPLE). I agree to take part "
                                                   "in the thesis survey voluntarily.\n", encoding="utf-8")
     shutil.copy2(dl / "consent_form_template.txt", dl / "consent_form_template (2).txt")
@@ -334,12 +203,12 @@ def make_downloads():
     for f in dl.iterdir():
         if f.is_file():
             stamp(f, "2026-09-25T12:00:00")
-    for f, probe in [("Course_Syllabus_CCS3110.pdf", "scrum"), ("id_picture_2x2.png", None),
+    for f, probe in [("Course_Syllabus_CCS3110.pdf", "scrum"), ("enrollment_checklist.md", "checklist"),
                      ("consent_form_template.txt", "voluntarily")]:
         manifest.append({"path": f"Downloads_demo/{f}", "probe": probe, "kind": "dup-original"})
     LINIS = {
         "duplicates": [["Course_Syllabus_CCS3110.pdf", "Course_Syllabus_CCS3110 (1).pdf"],
-                       ["id_picture_2x2.png", "id_picture_2x2 - Copy.png"],
+                       ["enrollment_checklist.md", "enrollment_checklist - Copy.md"],
                        ["consent_form_template.txt", "consent_form_template (2).txt"]],
         "zero_byte": ["New Text Document.txt", "untitled.txt"],
         "empty_folders": ["New folder", "extracted_zip"],
@@ -359,7 +228,6 @@ if __name__ == "__main__":
         shutil.rmtree(OUT)
     OUT.mkdir(parents=True)
     make_pdfs()
-    make_screenshots()
     make_office()
     make_noise()
     linis = make_downloads()

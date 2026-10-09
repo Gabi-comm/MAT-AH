@@ -13,34 +13,30 @@ import { Highlight, Rail, ResultRow, StatusStrip, Viewer, fmtBytes, kindLabel, r
 
 type Mode = 'hanap' | 'sagot' | 'linis' | 'kilos'
 
-const MODES: { id: Mode; label: string; hint: string; placeholder: string; examples: string[] }[] = [
+const MODES: { id: Mode; label: string; hint: string; placeholder: string }[] = [
   {
     id: 'hanap',
     label: 'Hanap',
     hint: 'Find a file by what was in it',
     placeholder: 'Describe the file, e.g. yung screenshot ng enrollment requirements',
-    examples: ['yung screenshot ng enrollment requirements', 'resibo ng tuition', 'bayad 1.5k', 'payment nung December', 'slides about queues'],
   },
   {
     id: 'sagot',
     label: 'Sagot',
     hint: 'Ask a question, get an answer with its source',
     placeholder: 'Ask your files, e.g. Ano yung deadline ng enrollment?',
-    examples: ['Ano yung deadline ng enrollment based sa announcement?', 'How much did I pay for tuition first sem?', 'Magkano ang minimum downpayment?', 'Ano ang wifi password ng dorm?'],
   },
   {
     id: 'linis',
     label: 'Linis',
     hint: 'Find duplicates, empty files and empty folders',
     placeholder: 'Folder to check (blank = all your folders), e.g. Downloads_demo',
-    examples: ['Downloads_demo'],
   },
   {
     id: 'kilos',
     label: 'Kilos',
     hint: 'Organize files — nothing moves until you say yes',
     placeholder: 'What should be organized? e.g. Organize my enrollment documents',
-    examples: ['Organize my enrollment documents', 'Ayusin yung mga payment screenshots'],
   },
 ]
 
@@ -136,20 +132,6 @@ export default function App() {
             {busy ? <span className="spin" aria-label="Working" /> : mode === 'sagot' ? 'Ask' : mode === 'linis' ? 'Check' : mode === 'kilos' ? 'Propose' : 'Find'}
           </button>
         </form>
-        <div className="examples">
-          {meta.examples.map((ex) => (
-            <button
-              key={ex}
-              className="chip"
-              onClick={() => {
-                setQ(ex)
-                run(ex)
-              }}
-            >
-              {ex}
-            </button>
-          ))}
-        </div>
         {err && <p className="error banner">{err}</p>}
 
         <section className="results" aria-live="polite">
