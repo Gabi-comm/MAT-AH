@@ -177,3 +177,22 @@ def test_llm_config_validates_saves_and_picks_models(tmp_path, monkeypatch):
     assert saved["chat_model"] == "llava:7b" and saved["host"] == "http://127.0.0.1:11434"
     llm.set_config({"chat_model": "missing:1b"})
     assert llm.chat_model() is None  # a pinned model that isn't installed is not silently swapped
+
+
+def test_llm_lists_downloaded_models_from_disk_and_only_pulls_recommended(tmp_path, monkeypatch):
+    from backend import llm
+    monkeypatch.setattr(llm, "_refresh", lambda force=False: None)
+    monkeypatch.setitem(llm._state, "up", False)
+    monkeypatch.setenv("OLLAMA_MODELS", str(tmp_path))
+    lib = tmp_path / "manifests" / "registry.ollama.ai" / "library"
+    for name, tag, size in (("qwen3", "8b", 5_230_000_000), ("embeddinggemma", "latest", 620_000_000)):
+        (lib / name).mkdir(parents=True, exist_ok=True)
+        (lib / name / tag).write_text(json.dumps({"layers": [{"size": size}]}), encoding="utf-8")
+    got = {d["name"]: d for d in llm.downloaded()}
+    assert got["qwen3:8b"]["size_gb"] == 5.2 and not got["qwen3:8b"]["embed"] and got["embeddinggemma:latest"]["embed"]
+    rec = {r["name"]: r for r in llm.recommended(set(got))}
+    assert rec["qwen3:8b"]["installed"] and rec["embeddinggemma"]["installed"] and not rec["qwen3:4b"]["installed"]
+    with pytest.raises(ValueError):
+        llm.pull("not-a-recommended:model")
+    with pytest.raises(ValueError):  # Ollama is down
+        llm.pull("qwen3:4b")

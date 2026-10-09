@@ -31,6 +31,7 @@ const PATHS = {
   sun: "M12 8a4 4 0 100 8 4 4 0 000-8zM12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4",
   moon: "M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z",
   sidebar: "M4 4h16v16H4zM9 4v16",
+  download: "M12 4v11M7 10l5 5 5-5M5 20h14",
 } as const;
 
 export type IconName = keyof typeof PATHS;

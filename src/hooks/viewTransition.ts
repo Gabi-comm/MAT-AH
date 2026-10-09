@@ -13,7 +13,11 @@ export function withViewTransition(update: () => void, className?: string): void
   }
   if (className) root.classList.add(className);
   const vt = document.startViewTransition(() => flushSync(update));
-  vt.finished.finally(() => {
-    if (className) root.classList.remove(className);
-  });
+  // A newer transition (fast clicking) skips this one; that rejects `ready`, which is expected.
+  vt.ready.catch(() => {});
+  vt.finished
+    .catch(() => {})
+    .finally(() => {
+      if (className) root.classList.remove(className);
+    });
 }

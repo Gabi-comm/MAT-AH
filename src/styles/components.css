@@ -227,6 +227,11 @@
 .rail { view-transition-name: rail; }
 .main { view-transition-name: page; }
 
+/* Clicks during a transition reach the live page instead of the snapshot overlay. */
+::view-transition {
+  pointer-events: none;
+}
+
 html.page-vt::view-transition-old(root),
 html.page-vt::view-transition-new(root),
 html.page-vt::view-transition-group(rail),
@@ -1577,6 +1582,43 @@ select.input {
 select.input option {
   background: var(--surface-elevated);
   color: var(--text-primary);
+}
+
+/* A recommended model still to download, under the model pickers. */
+.model-get {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+}
+
+.model-get-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.model-get-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 200px;
+  min-width: 0;
+  font-size: var(--fs-small);
+}
+
+.model-get-text .mono {
+  font-size: 12px;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.model-get-text > .subtle {
+  font-size: var(--fs-caption);
 }
 
 .llm-dot {

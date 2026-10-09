@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
-import { Notice, Skeleton, useToast } from "../../components/feedback/Feedback";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Notice, Progress, Skeleton, useToast } from "../../components/feedback/Feedback";
 import { Icon } from "../../components/Icon";
 import { useStatus } from "../../hooks/StatusContext";
 import { useBackend } from "../../services/BackendContext";
 import { isAbort } from "../../services/apiClient";
 import { plural } from "../../services/normalize";
-import type { LlmConfig, LlmInfo } from "../../services/types";
+import type { LlmConfig, LlmInfo, RecommendedModel } from "../../services/types";
 
 const CONTEXTS = [2048, 4096, 8192, 16384, 32768, 65536, 131072];
 const KEEP_ALIVE: { id: string; label: string }[] = [
@@ -30,9 +30,87 @@ function same(a: LlmConfig, b: LlmConfig): boolean {
   return (Object.keys(a) as (keyof LlmConfig)[]).every((k) => a[k] === b[k]);
 }
 
-/** Options for a model picker; keeps a saved model listed even if it was uninstalled. */
-function modelOptions(installed: string[], current: string): string[] {
-  return current && !installed.includes(current) ? [current, ...installed] : installed;
+/** Ollama treats "name" and "name:latest" as the same model. */
+function hasModel(names: Set<string>, m: string): boolean {
+  return names.has(m) || (!m.includes(":") && names.has(`${m}:latest`));
+}
+
+const gb = (n: number | null) => (n === null ? "" : `${n.toFixed(1)} GB`);
+
+function recLabel(r: RecommendedModel): string {
+  const size = r.size_gb === null ? "" : ` · ${gb(r.size_gb)} download`;
+  return `${r.label}${size}${r.fits ? "" : ` · needs ${r.min_ram_gb} GB memory`}`;
+}
+
+/** A model picker: Automatic, then models on this laptop, then recommended ones to download. */
+function ModelSelect({ id, label, value, autoLabel, use, info, onChange }: {
+  id: string;
+  label: string;
+  value: string;
+  autoLabel: string;
+  use: "answer" | "image";
+  info: LlmInfo;
+  onChange: (v: string) => void;
+}) {
+  const local = info.downloaded.filter((d) => !d.embed);
+  const names = new Set(local.map((d) => d.name));
+  const toGet = info.recommended.filter((r) => r.uses.includes(use) && !r.installed);
+  const orphan = value && !hasModel(names, value) && !toGet.some((r) => r.name === value);
+  return (
+    <div className="field">
+      <label htmlFor={id}>{label}</label>
+      <select id={id} className="input" value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">{autoLabel}</option>
+        <optgroup label="On this laptop">
+          {orphan && <option value={value}>{value} (not found)</option>}
+          {local.map((d) => (
+            <option key={d.name} value={d.name}>{d.size_gb === null ? d.name : `${d.name} · ${gb(d.size_gb)}`}</option>
+          ))}
+          {local.length === 0 && !orphan && <option disabled>No models downloaded yet</option>}
+        </optgroup>
+        {toGet.length > 0 && (
+          <optgroup label="Recommended to download">
+            {toGet.map((r) => (
+              <option key={r.name} value={r.name}>{recLabel(r)}</option>
+            ))}
+          </optgroup>
+        )}
+      </select>
+    </div>
+  );
+}
+
+/** One model that still needs downloading: what it is, a Download button, and live progress. */
+function DownloadRow({ rec, info, onPull }: { rec: RecommendedModel; info: LlmInfo; onPull: (m: string) => void }) {
+  const p = info.pulls[rec.name];
+  const busy = p?.state === "downloading";
+  return (
+    <div className="model-get">
+      <div className="model-get-head">
+        <div className="model-get-text">
+          <strong>{rec.label} <span className="mono subtle">{rec.name}</span></strong>
+          <span className="subtle">
+            {rec.note}
+            {rec.size_gb !== null && ` ${gb(rec.size_gb)} download.`}
+            {!rec.fits && ` Needs about ${rec.min_ram_gb} GB of memory; this laptop has ${info.ram_gb} GB.`}
+          </span>
+        </div>
+        <button type="button" className="btn btn-line" disabled={busy || !info.up} onClick={() => onPull(rec.name)}>
+          <Icon name="download" size={16} /> {busy ? "Downloading…" : p?.state === "error" ? "Try again" : "Download"}
+        </button>
+      </div>
+      {busy && (
+        <div className="stack gap-1">
+          <Progress done={p.completed} total={p.total} label={`Downloading ${rec.name}`} />
+          <span className="subtle mono" style={{ fontSize: 12 }}>
+            {p.total > 0 ? `${gb(p.completed / 1e9)} of ${gb(p.total / 1e9)}` : p.status}
+          </span>
+        </div>
+      )}
+      {p?.state === "error" && <Notice tone="err">Download failed: {p.error}</Notice>}
+      {!info.up && <span className="subtle" style={{ fontSize: 13 }}>Start Ollama to download.</span>}
+    </div>
+  );
 }
 
 export function LocalLlmSettings() {
@@ -44,6 +122,39 @@ export function LocalLlmSettings() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [testing, setTesting] = useState(false);
+  const announced = useRef(new Set<string>());
+
+  // While a download runs, poll for progress. Only the server's view updates; unsaved edits stay.
+  const downloading = info ? Object.values(info.pulls).some((p) => p.state === "downloading") : false;
+  useEffect(() => {
+    if (!downloading) return;
+    const t = window.setInterval(() => {
+      backend.llm(false).then(setInfo).catch(() => {});
+    }, 1000);
+    return () => window.clearInterval(t);
+  }, [downloading, backend]);
+
+  // Say once when a download finishes, and refresh the list so it shows as downloaded.
+  useEffect(() => {
+    if (!info) return;
+    for (const [m, p] of Object.entries(info.pulls)) {
+      if (p.state === "done" && !announced.current.has(m)) {
+        announced.current.add(m);
+        toast(`${m} downloaded.`);
+        backend.llm(true).then(setInfo).catch(() => {});
+        refreshStatus();
+      }
+    }
+  }, [info, backend, toast, refreshStatus]);
+
+  async function pull(model: string) {
+    announced.current.delete(model);
+    try {
+      setInfo(await backend.pullLlm(model));
+    } catch (e) {
+      toast((e as Error).message, "err");
+    }
+  }
 
   const apply = useCallback((i: LlmInfo) => {
     setInfo(i);
@@ -105,7 +216,12 @@ export function LocalLlmSettings() {
   }
 
   const dirty = !same(draft, info.config);
-  const pinnedMissing = [draft.chat_model, draft.vision_model].filter((m) => m && !info.installed.includes(m));
+  const have = new Set(info.downloaded.map((d) => d.name));
+  const missing = [...new Set([draft.chat_model, draft.vision_model])].filter((m) => m && !hasModel(have, m));
+  const toDownload = info.recommended.filter((r) => missing.includes(r.name));
+  const unknownMissing = missing.filter((m) => !toDownload.some((r) => r.name === m));
+  const embedRec = info.embed_installed ? undefined : info.recommended.find((r) => r.uses.includes("embed") && !r.installed);
+  const localCount = info.downloaded.filter((d) => !d.embed).length;
 
   return (
     <section className="card stack gap-4" aria-labelledby="llm-h">
@@ -120,7 +236,7 @@ export function LocalLlmSettings() {
         className="stack gap-4"
         onSubmit={(e) => {
           e.preventDefault();
-          if (dirty) save(draft, "Local LLM settings saved.");
+          if (dirty && toDownload.length === 0) save(draft, "Local LLM settings saved.");
         }}
       >
         <div className="field">
@@ -136,25 +252,30 @@ export function LocalLlmSettings() {
           )}
         </div>
 
+        <p className="subtle" style={{ fontSize: 13, margin: 0 }}>
+          {plural(localCount, "model")} on this laptop{info.ram_gb !== null && ` · ${info.ram_gb} GB memory`}
+          {!info.up && localCount > 0 && " · start Ollama to use them"}
+        </p>
+
         <div className="llm-fields">
-          <div className="field">
-            <label htmlFor="llm-chat">Answer model</label>
-            <select id="llm-chat" className="input" value={draft.chat_model} onChange={(e) => set("chat_model", e.target.value)}>
-              <option value="">Automatic{info.config.chat_model === "" && info.chat_model ? ` (${info.chat_model})` : ""}</option>
-              {modelOptions(info.installed, draft.chat_model).map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="llm-vision">Image model</label>
-            <select id="llm-vision" className="input" value={draft.vision_model} onChange={(e) => set("vision_model", e.target.value)}>
-              <option value="">Automatic{info.config.vision_model === "" && info.vision_model ? ` (${info.vision_model})` : ""}</option>
-              {modelOptions(info.installed, draft.vision_model).map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          </div>
+          <ModelSelect
+            id="llm-chat"
+            label="Answer model"
+            use="answer"
+            info={info}
+            value={draft.chat_model}
+            autoLabel={`Automatic${info.config.chat_model === "" && info.chat_model ? ` (${info.chat_model})` : ""}`}
+            onChange={(v) => set("chat_model", v)}
+          />
+          <ModelSelect
+            id="llm-vision"
+            label="Image model"
+            use="image"
+            info={info}
+            value={draft.vision_model}
+            autoLabel={`Automatic${info.config.vision_model === "" && info.vision_model ? ` (${info.vision_model})` : ""}`}
+            onChange={(v) => set("vision_model", v)}
+          />
           <div className="field">
             <label htmlFor="llm-ctx">Context window</label>
             <select id="llm-ctx" className="input" value={draft.num_ctx} onChange={(e) => set("num_ctx", Number(e.target.value))}>
@@ -174,14 +295,15 @@ export function LocalLlmSettings() {
           </div>
         </div>
 
-        {pinnedMissing.length > 0 && (
+        {toDownload.map((r) => (
+          <DownloadRow key={r.name} rec={r} info={info} onPull={pull} />
+        ))}
+        {unknownMissing.length > 0 && (
           <Notice tone="warn">
-            Not installed in Ollama: {pinnedMissing.join(", ")}. Run <code>ollama pull {pinnedMissing[0]}</code> or pick another model.
+            Not on this laptop: {unknownMissing.join(", ")}. Run <code>ollama pull {unknownMissing[0]}</code> or pick another model.
           </Notice>
         )}
-        {info.up && info.installed.length === 0 && (
-          <Notice tone="warn">No local models installed. Run <code>ollama pull {info.auto_order[0] ?? "gemma4:e4b"}</code>.</Notice>
-        )}
+        {embedRec && <DownloadRow rec={embedRec} info={info} onPull={pull} />}
 
         <dl className="kv">
           <div>
@@ -194,7 +316,7 @@ export function LocalLlmSettings() {
         </p>
 
         <div className="row wrap gap-2">
-          <button className="btn btn-primary" type="submit" disabled={!dirty || busy}>
+          <button className="btn btn-primary" type="submit" disabled={!dirty || busy || toDownload.length > 0} title={toDownload.length > 0 ? "Download the chosen model first" : undefined}>
             {busy ? "Saving…" : "Save"}
           </button>
           <button type="button" className="btn btn-ghost" disabled={!dirty || busy} onClick={() => setDraft({ ...info.config })}>

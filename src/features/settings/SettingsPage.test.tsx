@@ -83,4 +83,20 @@ describe("Settings: local LLM", () => {
     await userEvent.type(host, "http://192.168.1.5:11434");
     expect(within(section).getByText(/not on this computer/)).toBeInTheDocument();
   });
+
+  it("groups models on this laptop and recommended ones, and downloads a recommended pick before saving", async () => {
+    const backend = fakeBackend();
+    render(<App backend={backend} startup={false} />);
+    const picker = await screen.findByLabelText("Answer model");
+    const section = picker.closest("section")!;
+    const groups = within(picker).getAllByRole("group");
+    expect(groups.map((g) => g.getAttribute("label"))).toEqual(["On this laptop", "Recommended to download"]);
+    expect(within(groups[0]).getByRole("option", { name: /big:8b · 5.2 GB/ })).toBeInTheDocument();
+    expect(within(groups[1]).getByRole("option", { name: /Rec 4B · 2.5 GB download/ })).toBeInTheDocument();
+
+    await userEvent.selectOptions(picker, "rec:4b");
+    expect(within(section).getByRole("button", { name: "Save" })).toBeDisabled();
+    await userEvent.click(within(section).getByRole("button", { name: /Download/ }));
+    expect(backend.pullLlm).toHaveBeenCalledWith("rec:4b");
+  });
 });
