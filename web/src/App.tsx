@@ -203,6 +203,11 @@ function Empty() {
 
 function HanapView({ res, roots, onView }: { res: SearchResult; roots: Root[]; onView: (v: ViewTarget) => void }) {
   const p = res.query
+  // Meaning-only hits far below the best one are kept, but folded away.
+  const top = res.hits[0]?.score ?? 0
+  const isWeak = (h: SearchResult['hits'][number], i: number) => i >= 3 && !h.why.includes('keyword') && h.score < top * 0.45
+  const strong = res.hits.filter((h, i) => !isWeak(h, i))
+  const weak = res.hits.filter((h, i) => isWeak(h, i))
   const pills: string[] = [
     ...p.kinds.map((k) => `type: ${kindLabel(k)}`),
     ...(p.date_label ? [`date: ${p.date_label}`] : []),
@@ -227,11 +232,25 @@ function HanapView({ res, roots, onView }: { res: SearchResult; roots: Root[]; o
       {res.hits.length === 0 ? (
         <p className="none">No file matched. Try other words for what was in it, or check that its folder is in the list on the left.</p>
       ) : (
-        <ol className="rows">
-          {res.hits.map((h, i) => (
-            <ResultRow key={h.file.id} hit={h} rank={i} roots={roots} onView={(x) => onView(x)} />
-          ))}
-        </ol>
+        <>
+          <ol className="rows">
+            {strong.map((h, i) => (
+              <ResultRow key={h.file.id} hit={h} rank={i} roots={roots} onView={(x) => onView(x)} />
+            ))}
+          </ol>
+          {weak.length > 0 && (
+            <details className="weaker">
+              <summary>
+                {weak.length} weaker {weak.length === 1 ? 'match' : 'matches'}, related in meaning only
+              </summary>
+              <ol className="rows">
+                {weak.map((h, i) => (
+                  <ResultRow key={h.file.id} hit={h} rank={i} roots={roots} onView={(x) => onView(x)} />
+                ))}
+              </ol>
+            </details>
+          )}
+        </>
       )}
     </>
   )

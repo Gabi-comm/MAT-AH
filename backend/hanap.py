@@ -14,7 +14,7 @@ KIND_WORDS = {
     "pdf": ["pdf", "pdfs"],
     "pptx": ["slides", "slide", "ppt", "pptx", "presentation", "deck", "powerpoint"],
     "docx": ["docx", "word", "doc"],
-    "text": ["txt", "notes", "markdown"],
+    "text": ["txt", "markdown"],
 }
 WORD_TO_KIND = {w: k for k, ws in KIND_WORDS.items() for w in ws}
 
@@ -264,6 +264,7 @@ def _kind_browse(con, p) -> list[dict]:
 
 def _hit(f, c, score, why, p) -> dict:
     needles = p["terms"] + [fold(x) for x in p["phrases"]] + [a for v in p["amounts"] for a in amount_variants(v)]
+    needles += [f"{int(v):,}" for v in p["amounts"] if v >= 1000] + [SYN for t in p["terms"] for SYN in SYNONYMS.get(t, [])]
     return {
         "file": {k: f[k] for k in ("id", "path", "name", "ext", "kind", "size", "mtime", "taken_at")},
         "chunk_id": c["id"] if c else None,

@@ -1055,3 +1055,45 @@ input[type='checkbox'] {
     transition: none !important;
   }
 }
+
+/* ---------- Tala notes ---------- */
+.notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.notes ul {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+.notes li {
+  font-size: 14px;
+  background: var(--hl-soft);
+  border-radius: 4px;
+  padding: 4px 10px;
+}
+.notes input {
+  flex: 1;
+  min-width: 0;
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius-s);
+  background: var(--paper);
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+.weaker {
+  margin-top: 18px;
+}
+.weaker summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 6px 0;
+}

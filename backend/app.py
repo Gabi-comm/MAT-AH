@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import folders, hanap, kilos, linis, llm, sagot, scan, status
+from .chunk import name_words
 from .index import VECTORS, connect
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
@@ -202,6 +203,14 @@ def add_note(fid: int, body: NoteIn, con=Depends(db)):
     allnotes = " ".join(r[0] for r in con.execute("SELECT text FROM notes WHERE file_id=?", (fid,)))
     con.execute("UPDATE chunks_fts SET notes=? WHERE chunk_id IN (SELECT id FROM chunks WHERE file_id=?)",
                 (allnotes, fid))
+    if llm.embed_available():  # the note feeds the meaning index too
+        rows = con.execute("SELECT c.id, c.text, f.path FROM chunks c JOIN files f ON f.id=c.file_id WHERE c.file_id=?",
+                           (fid,)).fetchall()
+        VECTORS.remove([r["id"] for r in rows])
+        try:
+            scan.embed_chunks(con, [(r["id"], r["text"]) for r in rows], name_words(Path(rows[0]["path"])), allnotes)
+        except Exception:
+            pass
     return file_meta(fid, None, con)
 
 

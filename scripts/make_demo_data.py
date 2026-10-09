@@ -46,8 +46,9 @@ def pdf(path: Path, pages: list[str]):
     doc = pymupdf.open()
     for body in pages:
         page = doc.new_page(width=595, height=842)
+        body = body.replace("—", "-")  # the built-in PDF font has no em dash
         page.insert_textbox(pymupdf.Rect(56, 56, 540, 800), body, fontsize=11.5, fontname="helv", lineheight=1.35)
-        page.insert_text((56, 820), "SAMPLE — synthetic demo document, not a real record", fontsize=8, fontname="helv",
+        page.insert_text((56, 820), "SAMPLE - synthetic demo document, not a real record", fontsize=8, fontname="helv",
                          color=(0.5, 0.5, 0.5))
     path.parent.mkdir(parents=True, exist_ok=True)
     doc.save(path)

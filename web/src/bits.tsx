@@ -318,6 +318,7 @@ export function Viewer({ target, roots, onClose }: { target: ViewTarget; roots: 
         </button>
       </header>
       <FileActions file={f} loc={target.locator} onView={() => api.open(f.id)} />
+      {meta && <Notes fileId={f.id} notes={meta.notes} onSaved={setMeta} />}
       <div className="stage">
         {err && <p className="error">{err}</p>}
         {f.kind === 'pdf' && <iframe key={`${f.id}-${page}`} title={f.name} src={`${rawUrl(f.id)}#page=${page ?? 1}&view=FitH&navpanes=0`} />}
@@ -333,11 +334,59 @@ export function Viewer({ target, roots, onClose }: { target: ViewTarget; roots: 
   )
 }
 
+/** Tala: a note's words make this file findable. */
+function Notes({
+  fileId,
+  notes,
+  onSaved,
+}: {
+  fileId: number
+  notes: { id: number; text: string }[]
+  onSaved: (m: Awaited<ReturnType<typeof api.file>>) => void
+}) {
+  const [text, setText] = useState('')
+  const [busy, setBusy] = useState(false)
+  return (
+    <form
+      className="notes"
+      onSubmit={async (e) => {
+        e.preventDefault()
+        if (!text.trim()) return
+        setBusy(true)
+        try {
+          onSaved((await api.addNote(fileId, text)) as Awaited<ReturnType<typeof api.file>>)
+          setText('')
+        } finally {
+          setBusy(false)
+        }
+      }}
+    >
+      {notes.length > 0 && (
+        <ul>
+          {notes.map((n) => (
+            <li key={n.id}>{n.text}</li>
+          ))}
+        </ul>
+      )}
+      <input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Add a note so you can find this later, e.g. pinasa ko kay Ma'am Reyes"
+        aria-label="Add a note to this file"
+      />
+      <button className="btn small ghost" disabled={busy || !text.trim()}>
+        Save note
+      </button>
+    </form>
+  )
+}
+
 function OcrImage({ id, loc, needles }: { id: number; loc: Locator; needles: string[] }) {
   const [w, h] = loc.size ?? [0, 0]
   const hits = (loc.boxes ?? []).filter((b) => needles.some((n) => n.length >= 2 && fold(b.text).includes(n)))
   return (
-    <div className="ocr">
+    <div>
+      <div className="ocr">
       <img src={rawUrl(id)} alt="" />
       {w > 0 && (
         <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" aria-hidden>
@@ -346,6 +395,7 @@ function OcrImage({ id, loc, needles }: { id: number; loc: Locator; needles: str
           ))}
         </svg>
       )}
+      </div>
       {hits.length > 0 && <p className="ocr-note">Highlighted: words MAT-AH read in this image that match your search.</p>}
     </div>
   )
