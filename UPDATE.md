@@ -95,7 +95,7 @@ Everything runs on the laptop. The internet is used only once, to download the m
 | **PyMuPDF · python-docx · python-pptx · openpyxl** | Reading PDF, Word, PowerPoint, Excel | PDFs keep page numbers; slides keep slide numbers |
 | **SQLite + FTS5** | The one local index | files · chunks · keyword index · vectors · visual vectors · notes · proposals · operation log |
 | **Windows shell** | Open, Show in folder, Recycle Bin | `os.startfile`, `explorer /select`, send2trash |
-| **FastAPI + React (Vite)** | The app | Server on `127.0.0.1:8765` only; the UI is built to `web/dist` and served by FastAPI |
+| **FastAPI + React (Vite)** | The app | Server on `127.0.0.1:8765` only; the UI lives at the repo root, is built to `dist/` and served by FastAPI; `npm run dev` runs from the repo root |
 
 ---
 
@@ -206,7 +206,8 @@ powershell -ExecutionPolicy Bypass -File .\run.ps1            # add -Rebuild aft
 .venv\Scripts\python -m eval.run_eval
 
 # UI checks
-cd web; npm run typecheck; npm test; npm run lint
+npm run dev        # UI with live reload on http://localhost:5173 (backend must be running)
+npm run typecheck; npm test; npm run lint
 ```
 
 Current status: backend **10/10** tests pass; UI **42/42** tests pass, typecheck clean, lint has 0 errors.

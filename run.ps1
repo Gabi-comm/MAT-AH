@@ -14,12 +14,10 @@ if (-not (Test-Path .venv)) {
     .\.venv\Scripts\python -m pip install -r requirements.txt
 }
 
-if ($Rebuild -or -not (Test-Path web\dist\index.html)) {
+if ($Rebuild -or -not (Test-Path dist\index.html)) {
     Write-Host 'Building the web UI...'
-    Push-Location web
     if (-not (Test-Path node_modules)) { npm install }
     npm run build
-    Pop-Location
 }
 
 if ($Demo) {

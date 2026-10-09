@@ -72,7 +72,7 @@ authorized folders (native folder dialog)      web UI on 127.0.0.1
 - **Most searches don't call the LLM.** Only Sagot, Kilos and long unstructured queries do. If Ollama is down, keyword search, Linis and opening files keep working.
 - **Safety:** the server binds 127.0.0.1 only; the browser sends file ids, never paths; every path is resolved and re-checked against the authorized folders before any read or move; Kilos's validator drops file ids the model invented and keeps destinations inside your folders.
 
-Code map: `backend/` (`app.py` routes · `folders.py` roots and path guard · `scan.py`, `extract.py`, `chunk.py` indexing · `media.py` video/audio · `visual.py` CLIP · `winsearch.py` Windows Search bridge · `index.py` SQLite and vector store · `hanap.py`, `sagot.py`, `linis.py`, `kilos.py` agents · `llm.py` the only Ollama client · `status.py`), `web/` (React + Vite + TypeScript), `scripts/make_demo_data.py`, `eval/`, `tests/`.
+Code map: `backend/` (`app.py` routes · `folders.py` roots and path guard · `scan.py`, `extract.py`, `chunk.py` indexing · `media.py` video/audio · `visual.py` CLIP · `winsearch.py` Windows Search bridge · `index.py` SQLite and vector store · `hanap.py`, `sagot.py`, `linis.py`, `kilos.py` agents · `llm.py` the only Ollama client · `status.py`), `src/` + `public/` at the repo root (React + Vite + TypeScript UI, see [FRONTEND.md](FRONTEND.md)), `scripts/make_demo_data.py`, `eval/`, `tests/`.
 
 ## Evaluation
 

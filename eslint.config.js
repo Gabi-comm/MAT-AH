@@ -4,9 +4,9 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
-// Kept from the team's original web/ setup.
+// Kept from the team's original web/ setup; the UI now lives at the repo root next to the Python backend.
 export default tseslint.config(
-  { ignores: ['dist'] },
+  { ignores: ['dist', '.venv', 'data', 'backend', 'demo_data', 'eval', 'tests', 'scripts', 'node_modules'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],

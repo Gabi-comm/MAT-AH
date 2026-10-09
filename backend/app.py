@@ -16,7 +16,7 @@ from . import folders, hanap, kilos, linis, llm, media, sagot, scan, status, vis
 from .chunk import name_words
 from .index import VECTORS, VISUAL, connect
 
-WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
+WEB_DIST = Path(__file__).resolve().parent.parent / "dist"  # the React UI, built at the repo root
 
 
 def db():

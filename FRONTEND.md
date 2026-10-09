@@ -1,15 +1,15 @@
-# MAT-AH Web (desktop frontend)
+# MAT-AH UI (desktop frontend)
 
 React 19 + Vite 6 + TypeScript. Plain CSS with design tokens, no UI or animation library.
-The FastAPI backend serves the built app from `web/dist` at `/` and the API under `/api`
-(see `backend/app.py`). This folder is frontend-only; nothing here changes the backend.
+The UI lives at the repo root (`src/`, `public/`, `index.html`, `package.json`, `vite.config.ts`) next to the
+Python backend. The FastAPI backend serves the built app from `dist/` at `/` and the API under `/api`
+(see `backend/app.py`). Vite, ESLint and Vitest ignore the Python folders (`.venv`, `backend`, `data`…).
 
 ## Run it
 
-Requires Node.js 20 or newer. From the repository root, in PowerShell:
+Requires Node.js 20 or newer. From the repository root (`MAT-AH/`), in PowerShell:
 
 ```powershell
-cd web
 npm install
 ```
 
@@ -37,7 +37,7 @@ Production builds strip the demo layer entirely.
 **Build for the backend to serve:**
 
 ```powershell
-npm run build        # writes web/dist, which backend/app.py mounts at /
+npm run build        # writes dist/, which backend/app.py mounts at /
 ```
 
 **Checks:** `npm run typecheck` · `npm test` · `npm run lint`
