@@ -82,8 +82,8 @@
   --content-max: 1080px;
 
   /* The rail is dark in both themes. */
-  --rail-bg: var(--c-void);
   --rail-surface: rgba(255, 255, 255, 0.05);
+  --rail-glass: rgba(6, 4, 10, 0.58);
   --rail-active: rgba(255, 255, 255, 0.08);
   --rail-border: rgba(255, 255, 255, 0.07);
   --rail-text: #ece6f2;

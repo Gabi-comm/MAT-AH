@@ -1,16 +1,78 @@
-/* ===================== App shell: black rail, glowing glass canvas ===================== */
+/* ===================== App shell: one glowing panel, glass rail inside ===================== */
 
+/* The panel: rounded, carries the moving aurora, holds the rail and the page. */
 .shell {
+  position: relative;
+  isolation: isolate;
   min-height: 100%;
   display: flex;
   flex-wrap: wrap;
-  background: var(--background);
+  background: var(--canvas);
+  overflow: clip;
 }
 
+@media (min-width: 900px) {
+  .shell {
+    flex-wrap: nowrap;
+    height: calc(100vh - 20px);
+    min-height: 0;
+    margin: 10px;
+    border-radius: var(--r-panel);
+    border: 1px solid var(--glass-edge);
+    overflow: hidden;
+  }
+}
+
+/* Aurora: a warm peach-to-indigo glow at the top left and a violet glow at
+   the bottom right on near-black, each slowly drifting. */
+.shell::before,
+.shell::after {
+  content: "";
+  position: absolute;
+  inset: -25%;
+  pointer-events: none;
+  z-index: -1;
+  will-change: transform;
+}
+
+.shell::before {
+  background:
+    radial-gradient(38% 46% at 22% 18%, var(--aurora-warm), transparent 70%),
+    radial-gradient(55% 62% at 28% 26%, var(--aurora-purple), transparent 72%),
+    radial-gradient(70% 80% at 32% 34%, var(--aurora-indigo), transparent 75%);
+  animation: aurora-a 26s ease-in-out infinite alternate;
+}
+
+.shell::after {
+  background:
+    radial-gradient(34% 40% at 82% 84%, var(--aurora-violet-hi), transparent 70%),
+    radial-gradient(52% 58% at 76% 80%, var(--aurora-violet), transparent 74%);
+  animation: aurora-b 32s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-a {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(6%, 5%, 0) scale(1.08); }
+  100% { transform: translate3d(-3%, 8%, 0) scale(0.96); }
+}
+
+@keyframes aurora-b {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-7%, -4%, 0) scale(1.1); }
+  100% { transform: translate3d(-2%, -9%, 0) scale(0.95); }
+}
+
+/* The rail: a dark glass card floating inside the panel. */
 .rail {
-  flex: 1 1 var(--rail-w);
+  flex: 1 1 100%;
   max-width: 100%;
-  background: var(--rail-bg);
+  margin: 10px 10px 0;
+  background: var(--rail-glass);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--rail-border);
+  border-radius: calc(var(--r-panel) - 6px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   color: var(--rail-text);
   padding: 18px 12px;
   display: flex;
@@ -23,9 +85,7 @@
 @media (min-width: 900px) {
   .rail {
     flex: 0 0 var(--rail-w);
-    position: sticky;
-    top: 0;
-    height: 100vh;
+    margin: 10px 0 10px 10px;
     overflow-y: auto;
     overflow-x: hidden;
     transition: flex-basis 240ms var(--ease-settle);
@@ -38,6 +98,44 @@
   }
 
   .shell.is-collapsed .rail-brand {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .shell.is-collapsed .rail-wordmark,
+  .shell.is-collapsed .rail-group,
+  .shell.is-collapsed .rail-status {
+    display: none;
+  }
+
+  .shell.is-collapsed .nav-item {
+    justify-content: center;
+    padding: 0;
+  }
+
+  /* Settings stays at the bottom with the status card hidden. */
+  .shell.is-collapsed .rail > .nav-item:last-child {
+    margin-top: auto;
+  }
+
+  .shell.is-collapsed .nav-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* Narrow screens: the rail sits on top, so collapsing hides it. */
+@media (max-width: 899px) {
+  .shell.is-collapsed .rail {
+    display: none;
+  }
+}
+
+.rail-brand {
     justify-content: center;
     padding-inline: 0;
   }
@@ -186,68 +284,20 @@
 .dot.err { background: #ff8a80; }
 
 /* The canvas: a rounded panel with a plum glow over reeded glass. */
+/* The page: transparent over the aurora; scrolls inside the panel on desktop. */
 .main {
   flex: 999 1 560px;
   min-width: 0;
   display: flex;
   flex-direction: column;
   position: relative;
-  isolation: isolate;
-  background: var(--canvas);
-  overflow: hidden;
 }
 
 @media (min-width: 900px) {
   .main {
-    margin: 10px 10px 10px 0;
-    border-radius: var(--r-panel);
-    border: 1px solid var(--glass-edge);
-    min-height: calc(100vh - 20px);
+    height: 100%;
+    overflow-y: auto;
   }
-}
-
-.main::before,
-.main::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-}
-
-/* Aurora: a warm peach-to-indigo glow at the top left and a violet glow at
-   the bottom right on near-black, each slowly drifting. */
-.main::before,
-.main::after {
-  inset: -25%;
-  will-change: transform;
-}
-
-.main::before {
-  background:
-    radial-gradient(38% 46% at 22% 18%, var(--aurora-warm), transparent 70%),
-    radial-gradient(55% 62% at 28% 26%, var(--aurora-purple), transparent 72%),
-    radial-gradient(70% 80% at 32% 34%, var(--aurora-indigo), transparent 75%);
-  animation: aurora-a 26s ease-in-out infinite alternate;
-}
-
-.main::after {
-  background:
-    radial-gradient(34% 40% at 82% 84%, var(--aurora-violet-hi), transparent 70%),
-    radial-gradient(52% 58% at 76% 80%, var(--aurora-violet), transparent 74%);
-  animation: aurora-b 32s ease-in-out infinite alternate;
-}
-
-@keyframes aurora-a {
-  0% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(6%, 5%, 0) scale(1.08); }
-  100% { transform: translate3d(-3%, 8%, 0) scale(0.96); }
-}
-
-@keyframes aurora-b {
-  0% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(-7%, -4%, 0) scale(1.1); }
-  100% { transform: translate3d(-2%, -9%, 0) scale(0.95); }
 }
 
 .topbar {
