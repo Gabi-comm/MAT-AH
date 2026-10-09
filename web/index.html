@@ -1,10 +1,31 @@
 <!doctype html>
-<html lang="en">
+<html lang="fil">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232347D9'/%3E%3Crect x='7' y='17' width='18' height='6' rx='2' fill='%23FFE45C'/%3E%3C/svg%3E" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MAT-AH</title>
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content="MAT-AH: find, understand and organize your files, privately on your computer." />
+    <title>MAT-AH · Ah, kita ko na!</title>
+    <link rel="icon" href="/branding/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/branding/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="apple-touch-icon" href="/branding/app-icon-180.png" />
+    <script>
+      // Apply the saved theme and motion before first paint so there is no flash.
+      (function () {
+        var theme = "system", motion = "full", follow = true;
+        try {
+          var p = JSON.parse(localStorage.getItem("matah.prefs.v1") || "{}");
+          if (p.theme === "light" || p.theme === "dark" || p.theme === "system") theme = p.theme;
+          if (p.motion === "full" || p.motion === "subtle" || p.motion === "none") motion = p.motion;
+          if (typeof p.followSystemMotion === "boolean") follow = p.followSystemMotion;
+        } catch (e) {}
+        var mm = window.matchMedia ? function (q) { return window.matchMedia(q).matches; } : function () { return false; };
+        if (theme === "system") theme = mm("(prefers-color-scheme: dark)") ? "dark" : "light";
+        if (follow && mm("(prefers-reduced-motion: reduce)")) motion = "none";
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.motion = motion;
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

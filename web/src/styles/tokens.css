@@ -1,0 +1,182 @@
+/*
+  MAT-AH design tokens, taken from the approved Claude Design boards
+  ("03 Color and Typography: Iris Bloom" and the D01 to D10 desktop screens).
+  Contrast ratios are noted next to text pairs (WCAG 2.2 AA needs 4.5:1).
+
+  Theme is set by data-theme="light" | "dark" on <html> (see theme/theme.ts).
+*/
+
+:root {
+  /* Raw palette: Iris Bloom */
+  --c-pupil: #0e0a18;
+  --c-night: #1a1430;
+  --c-night-2: #261e44;
+  --c-porcelain: #f6f3ef;
+  --c-sheet: #fffdfb;
+  --c-ink: #17121f;
+  --c-ink-2: #463f55;
+  --c-ink-3: #6a6378;
+  --c-line: #e4ded8;
+  --c-line-2: #cfc6cf;
+  --c-violet: #5b3fd6;
+  --c-violet-deep: #3f2aa6;
+  --c-lavender: #c8bcff;
+  --c-lav-soft: #ece7ff;
+  --c-ember: #f28a4e;
+  --c-ember-deep: #a2420f;
+  --c-ember-soft: #fde3d2;
+  --c-mist: #b3a9c9;
+  --c-local: #7ee0a8;
+
+  /* Typography */
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-ui: "Geist", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
+
+  --fs-hero: clamp(34px, 3.6vw, 52px);
+  --fs-display: 32px;
+  --fs-title: 20px;
+  --fs-body: 16px;
+  --fs-ui: 15px;
+  --fs-small: 14px;
+  --fs-caption: 13px;
+  --fs-meta: 12.5px;
+
+  /* Spacing (4-based) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-14: 56px;
+
+  /* Radius */
+  --r-chip: 6px;
+  --r-control: 10px;
+  --r-field: 14px;
+  --r-card: 14px;
+  --r-panel: 20px;
+  --r-pill: 999px;
+
+  /* Motion (06 Motion Storyboard and Spec) */
+  --t-hover: 140ms;
+  --t-focus: 180ms;
+  --t-state: 220ms;
+  --t-reveal: 280ms;
+  --t-recognize: 320ms;
+  --t-gather: 360ms;
+  --ease-aperture: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-settle: cubic-bezier(0.3, 0, 0.1, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --stagger: 40ms;
+
+  /* Layout */
+  --rail-w: 232px;
+  --content-max: 1080px;
+}
+
+/* ---------- Light theme (default workspace: "porcelain field") ---------- */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --background: var(--c-porcelain);
+  --surface: var(--c-sheet);
+  --surface-elevated: #ffffff;
+  --surface-sunken: #efeae4;
+  --text-primary: var(--c-ink); /* 16.6:1 on background */
+  --text-secondary: var(--c-ink-2); /* 9.0:1 */
+  --text-tertiary: var(--c-ink-3); /* 5.2:1 */
+  --border: var(--c-line);
+  --border-strong: var(--c-line-2);
+  --border-input: var(--c-ink);
+
+  --accent-primary: var(--c-violet); /* decisions, approvals, links */
+  --accent-primary-hover: var(--c-violet-deep);
+  --on-accent-primary: #ffffff; /* 6.7:1 */
+  --accent-primary-soft: var(--c-lav-soft);
+  --accent-primary-text: var(--c-violet-deep); /* 8.3:1 on soft */
+
+  --accent-secondary: var(--c-ember); /* the seam, "found", evidence */
+  --accent-secondary-soft: var(--c-ember-soft);
+  --accent-secondary-text: var(--c-ember-deep); /* 5.7:1 */
+  --on-accent-secondary: var(--c-pupil); /* 7.9:1 */
+
+  --focus-ring: var(--c-lavender);
+  --focus-outline: var(--c-ink);
+
+  --success: #23784a;
+  --success-soft: #e3f1e8;
+  --success-text: #1b5e39;
+  --warning: var(--c-ember-deep);
+  --warning-soft: var(--c-ember-soft);
+  --error: #b42318;
+  --error-soft: #fbe6e3;
+
+  --rail-bg: var(--c-pupil);
+  --rail-surface: var(--c-night);
+  --rail-active: var(--c-night-2);
+  --rail-text: #e6e0f0;
+  --rail-muted: #9a91b2; /* 6.7:1 on rail */
+  --local-dot: var(--c-local);
+
+  --shadow-1: 0 1px 2px rgba(23, 18, 31, 0.08);
+  --shadow-2: 0 8px 24px rgba(23, 18, 31, 0.1);
+  --shadow-3: 0 18px 48px rgba(23, 18, 31, 0.18);
+  --scrim: rgba(14, 10, 24, 0.45);
+
+  --iris-ground: transparent;
+}
+
+/* ---------- Dark theme ("pupil field"): designed, not inverted ---------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #120e20;
+  --surface: var(--c-night);
+  --surface-elevated: var(--c-night-2);
+  --surface-sunken: #0f0b1b;
+  --text-primary: var(--c-porcelain); /* 16.0:1 on surface */
+  --text-secondary: var(--c-mist); /* 8.0:1 */
+  --text-tertiary: #9a91b2; /* 6.0:1 */
+  --border: #33294f;
+  --border-strong: #463c66;
+  --border-input: #b3a9c9;
+
+  --accent-primary: #9c8cff;
+  --accent-primary-hover: #b6aaff;
+  --on-accent-primary: var(--c-pupil); /* 7.1:1 */
+  --accent-primary-soft: #2a2150;
+  --accent-primary-text: var(--c-lavender); /* 8.5:1 on soft */
+
+  --accent-secondary: var(--c-ember);
+  --accent-secondary-soft: #3a2418;
+  --accent-secondary-text: #f6a877; /* 7.5:1 on soft, 9.1:1 on surface */
+  --on-accent-secondary: var(--c-pupil);
+
+  --focus-ring: #5b3fd6;
+  --focus-outline: var(--c-porcelain);
+
+  --success: #5fcb8c;
+  --success-soft: #16301f;
+  --success-text: #8fe0b0;
+  --warning: #f6a877;
+  --warning-soft: #3a2418;
+  --error: #ff8a80;
+  --error-soft: #3a1714;
+
+  --rail-bg: #0a0712;
+  --rail-surface: #17112b;
+  --rail-active: var(--c-night-2);
+  --rail-text: #e6e0f0;
+  --rail-muted: #9a91b2;
+  --local-dot: var(--c-local);
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.5);
+  --scrim: rgba(5, 3, 10, 0.6);
+
+  --iris-ground: transparent;
+}
