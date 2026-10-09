@@ -14,6 +14,8 @@ export interface Preferences {
   motion: MotionPref;
   /** When true, the OS "reduce motion" setting turns decorative motion off. */
   followSystemMotion: boolean;
+  /** Sidebar collapsed to icons (desktop) or hidden (narrow screens). */
+  sidebarCollapsed: boolean;
   iris: {
     preset: IrisPresetId;
     accessory: IrisAccessory;
@@ -30,6 +32,7 @@ export const DEFAULT_PREFS: Preferences = {
   theme: "dark",
   motion: "full",
   followSystemMotion: true,
+  sidebarCollapsed: false,
   iris: { preset: "classic", accessory: "none", expression: "classic", visible: true },
 };
 
@@ -48,10 +51,11 @@ export function sanitize(raw: unknown): Preferences {
   const iris = (r.iris && typeof r.iris === "object" ? r.iris : {}) as Record<string, unknown>;
   return {
     version: 1,
-    theme: pick(r.theme, THEMES, DEFAULT_PREFS.theme),
-    // No Settings control for these any more: always the defaults, so an old saved "off" can't get stuck.
+    theme: pick(r.theme, THEMES, DEFAULT_PREFS.theme), // set from the top-bar toggle
+    // No Settings control for these any more: always the defaults, so an old saved value can't get stuck.
     motion: DEFAULT_PREFS.motion,
-    followSystemMotion: typeof r.followSystemMotion === "boolean" ? r.followSystemMotion : DEFAULT_PREFS.followSystemMotion,
+    followSystemMotion: DEFAULT_PREFS.followSystemMotion,
+    sidebarCollapsed: typeof r.sidebarCollapsed === "boolean" ? r.sidebarCollapsed : DEFAULT_PREFS.sidebarCollapsed,
     iris: {
       preset: pick(iris.preset, PRESETS, DEFAULT_PREFS.iris.preset),
       accessory: pick(iris.accessory, ACCESSORIES, DEFAULT_PREFS.iris.accessory),

@@ -25,11 +25,11 @@ describe("system reduced motion", () => {
     expect(screen.queryByRole("button", { name: "Skip" })).not.toBeInTheDocument();
   });
 
-  it("can be overridden when the user stops following the system", () => {
+  it("always follows the system, even if an old saved setting opted out", () => {
     mockReduce(true);
     localStorage.setItem(PREFS_KEY, JSON.stringify({ followSystemMotion: false }));
     render(<App backend={fakeBackend()} startup={false} />);
-    expect(document.documentElement.dataset.motion).toBe("full");
+    expect(document.documentElement.dataset.motion).toBe("none");
   });
 
   it("shows the branded startup once per session when motion is on", () => {

@@ -39,9 +39,9 @@ function NavMark({ page, icon, on }: { page: Page; icon: IconName; on: boolean }
 function NavLink({ def, current }: { def: NavDef; current: Page }) {
   const on = current === def.page;
   return (
-    <a className="nav-item" href={hrefFor(def.page)} aria-current={on ? "page" : undefined}>
+    <a className="nav-item" href={hrefFor(def.page)} aria-current={on ? "page" : undefined} title={def.label}>
       <NavMark page={def.page} icon={def.icon} on={on} />
-      {def.label}
+      <span className="nav-label">{def.label}</span>
       {def.en && <span className="en">{def.en}</span>}
     </a>
   );
@@ -75,6 +75,23 @@ function RailStatus() {
   );
 }
 
+function SidebarToggle() {
+  const { prefs, update } = usePrefs();
+  const collapsed = prefs.sidebarCollapsed;
+  return (
+    <button
+      className="icon-btn"
+      onClick={() => update({ sidebarCollapsed: !collapsed })}
+      aria-label={collapsed ? "Show sidebar" : "Hide sidebar"}
+      aria-expanded={!collapsed}
+      aria-controls="main-nav"
+      title={collapsed ? "Show sidebar" : "Hide sidebar"}
+    >
+      <Icon name="sidebar" />
+    </button>
+  );
+}
+
 function ThemeToggle() {
   const { prefs, update, resolvedTheme } = usePrefs();
   const next = prefs.theme === "system" ? (resolvedTheme === "dark" ? "light" : "dark") : prefs.theme === "dark" ? "light" : "dark";
@@ -104,16 +121,17 @@ export function AppShell({
   showCompanion?: boolean;
 }) {
   const backend = useBackend();
+  const { prefs } = usePrefs();
   return (
-    <div className="shell">
+    <div className={`shell${prefs.sidebarCollapsed ? " is-collapsed" : ""}`}>
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <nav className="rail" aria-label="Main">
+      <nav className="rail" id="main-nav" aria-label="Main">
         <a className="rail-brand" href={hrefFor("home")} aria-label="MAT-AH home">
           <span className="row gap-2">
             <MatahSymbol size={30} tone="light" />
-            <MatahWordmark height={17} style={{ color: "#F4F0F7" }} />
+            <MatahWordmark className="rail-wordmark" height={17} style={{ color: "#F4F0F7" }} />
           </span>
         </a>
         <NavLink def={{ page: "home", label: "Home", icon: "home" }} current={page} />
@@ -130,6 +148,7 @@ export function AppShell({
       </nav>
       <div className="main">
         <header className="topbar">
+          <SidebarToggle />
           <div className="topbar-title">{title}</div>
           {backend.isDemo && <span className="demo-badge">Demo data</span>}
           <div className="row gap-2" style={{ marginLeft: "auto", alignItems: "flex-end" }}>

@@ -96,11 +96,12 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --background: var(--c-void);
-  --canvas: var(--c-pupil);
-  --glow-1: rgba(110, 36, 130, 0.55);
-  --glow-2: rgba(124, 58, 237, 0.18);
-  --texture-line: rgba(255, 255, 255, 0.035);
-  --texture-band: rgba(255, 255, 255, 0.025);
+  --canvas: #020104;
+  --aurora-warm: rgba(236, 170, 160, 0.85);
+  --aurora-purple: rgba(150, 100, 200, 0.7);
+  --aurora-indigo: rgba(52, 30, 130, 0.75);
+  --aurora-violet: rgba(120, 60, 200, 0.6);
+  --aurora-violet-hi: rgba(180, 130, 245, 0.85);
 
   --surface: rgba(22, 18, 28, 0.72);
   --surface-elevated: #17131d;
@@ -151,10 +152,11 @@
   color-scheme: light;
   --background: #1a1220;
   --canvas: #f1ecf5;
-  --glow-1: rgba(196, 160, 214, 0.75);
-  --glow-2: rgba(124, 58, 237, 0.12);
-  --texture-line: rgba(40, 20, 60, 0.045);
-  --texture-band: rgba(255, 255, 255, 0.35);
+  --aurora-warm: rgba(244, 190, 176, 0.75);
+  --aurora-purple: rgba(196, 160, 232, 0.55);
+  --aurora-indigo: rgba(150, 130, 220, 0.3);
+  --aurora-violet: rgba(170, 120, 240, 0.35);
+  --aurora-violet-hi: rgba(200, 160, 250, 0.6);
 
   --surface: rgba(255, 255, 255, 0.66);
   --surface-elevated: #ffffff;

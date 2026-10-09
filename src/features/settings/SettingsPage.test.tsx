@@ -7,27 +7,19 @@ import { fakeBackend } from "../../test/fakeBackend";
 
 const stored = () => JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}");
 
-describe("Settings: theme, motion and Iris customization", () => {
+describe("Settings: Iris customization", () => {
   beforeEach(() => {
     window.location.hash = "#/settings";
     delete document.documentElement.dataset.theme;
   });
 
-  it("switches theme and persists it", async () => {
+  it("has no Appearance section; the top-bar toggle still switches and saves the theme", async () => {
     render(<App backend={fakeBackend()} startup={false} />);
-    const group = screen.getByRole("radiogroup", { name: "Theme" });
-    await userEvent.click(within(group).getByRole("radio", { name: "Dark" }));
-    expect(document.documentElement.dataset.theme).toBe("dark");
-    expect(stored().theme).toBe("dark");
-    await userEvent.click(within(group).getByRole("radio", { name: "Light" }));
+    expect(screen.queryByRole("heading", { name: "Appearance" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radiogroup", { name: "Theme" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Switch to light theme" }));
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(stored().theme).toBe("light");
-  });
-
-  it("restores the saved theme on next launch", () => {
-    localStorage.setItem(PREFS_KEY, JSON.stringify({ theme: "dark" }));
-    render(<App backend={fakeBackend()} startup={false} />);
-    expect(document.documentElement.dataset.theme).toBe("dark");
   });
 
   it("has no Animation or Show Iris controls, and an old saved 'off' is ignored", () => {
@@ -76,7 +68,7 @@ describe("Settings: local LLM", () => {
   it("saves only changed settings and warns about a non-local address", async () => {
     const backend = fakeBackend();
     render(<App backend={backend} startup={false} />);
-    const section = (await screen.findByRole("heading", { name: "Local LLM" })).closest("section")!;
+    const section = (await screen.findByLabelText("Answer model")).closest("section")!;
     const save = within(section).getByRole("button", { name: "Save" });
     expect(save).toBeDisabled();
 

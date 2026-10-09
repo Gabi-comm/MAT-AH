@@ -109,7 +109,7 @@ export function LocalLlmSettings() {
 
   return (
     <section className="card stack gap-4" aria-labelledby="llm-h">
-      <div className="setting-row">
+      <div className="row wrap gap-3" style={{ justifyContent: "space-between" }}>
         <h2 id="llm-h" className="card-title">Local LLM</h2>
         <span className={`llm-dot${info.up ? " is-up" : ""}`} role="status">
           {info.up ? "Ollama connected" : "Ollama not reachable"}

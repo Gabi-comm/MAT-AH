@@ -6,7 +6,6 @@ import { useStatus } from "../../hooks/StatusContext";
 import { Iris } from "../../mascot/Iris";
 import { ACCESSORY_LABELS, EXPRESSION_LABELS, IRIS_PRESETS } from "../../mascot/irisPresets";
 import { usePrefs } from "../../prefs/PrefsContext";
-import type { ThemePref } from "../../prefs/preferences";
 import { useBackend } from "../../services/BackendContext";
 import { isAbort } from "../../services/apiClient";
 import { indexPhaseText, plural } from "../../services/normalize";
@@ -14,12 +13,6 @@ import type { RootFolder } from "../../services/types";
 import { LocalLlmSettings } from "./LocalLlmSettings";
 
 const IrisCustomization = lazy(() => import("../../mascot/IrisCustomization"));
-
-const THEMES: { id: ThemePref; label: string }[] = [
-  { id: "light", label: "Light" },
-  { id: "dark", label: "Dark" },
-  { id: "system", label: "System" },
-];
 
 function Folders() {
   const backend = useBackend();
@@ -186,32 +179,14 @@ function Folders() {
 }
 
 export function SettingsPage({ section }: { section?: string }) {
-  const { prefs, update, resolvedTheme } = usePrefs();
+  const { prefs, resolvedTheme } = usePrefs();
   const { status } = useStatus();
   const [customizing, setCustomizing] = useState(section === "iris");
 
   return (
     <AppShell page="settings" title="Settings">
       <div className="settings-grid">
-        <section className="card stack gap-3" aria-labelledby="appearance-h">
-          <h2 id="appearance-h" className="card-title">Appearance</h2>
-          <div className="setting-row">
-            <span>Theme</span>
-            <div className="segmented" role="radiogroup" aria-label="Theme">
-              {THEMES.map((t) => (
-                <button key={t.id} role="radio" aria-checked={prefs.theme === t.id} onClick={() => update({ theme: t.id })}>
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <label className="switch">
-            <input type="checkbox" checked={prefs.followSystemMotion} onChange={(e) => update({ followSystemMotion: e.target.checked })} />
-            Follow system reduced motion
-          </label>
-        </section>
-
-        <section className={`card stack gap-3${customizing ? " iris-card is-open" : " iris-card"}`} aria-labelledby="iris-h">
+        <section className={`card stack gap-3 iris-card${customizing ? " is-open" : ""}`} aria-labelledby="iris-h">
           <h2 id="iris-h" className="card-title">Iris</h2>
           {!customizing && (
             <div className="iris-summary">
@@ -236,27 +211,31 @@ export function SettingsPage({ section }: { section?: string }) {
           )}
         </section>
 
-        <Folders />
+        <div className="settings-col">
+          <LocalLlmSettings />
+        </div>
 
-        <LocalLlmSettings />
+        <div className="settings-col">
+          <Folders />
 
-        <section className="card stack gap-3" aria-labelledby="ai-h">
-          <h2 id="ai-h" className="card-title">AI status</h2>
-          {!status && <Skeleton h={80} />}
-          {status && (
-            <dl className="kv">
-              <div><dt>Ollama</dt><dd>{status.ollama ? "Running" : "Not running"}</dd></div>
-              <div><dt>Answer model</dt><dd className="mono" style={{ fontSize: 13 }}>{status.chat_model ?? "None"}</dd></div>
-              <div><dt>Embedding model</dt><dd className="mono" style={{ fontSize: 13 }}>{status.embed_model ?? "None"}</dd></div>
-              <div><dt>OCR</dt><dd>{status.ocr}</dd></div>
-              <div><dt>Vectors</dt><dd className="mono">{status.vectors.toLocaleString("en-US")}</dd></div>
-              <div><dt>Internet</dt><dd>{status.online ? "Connected, not used" : "Offline"}</dd></div>
-            </dl>
-          )}
-          {status && status.cloud_models.length > 0 && (
-            <Notice tone="warn">Cloud models detected in Ollama ({status.cloud_models.join(", ")}). Use local models to keep files private.</Notice>
-          )}
-        </section>
+          <section className="card stack gap-3" aria-labelledby="ai-h">
+            <h2 id="ai-h" className="card-title">AI status</h2>
+            {!status && <Skeleton h={80} />}
+            {status && (
+              <dl className="kv">
+                <div><dt>Ollama</dt><dd>{status.ollama ? "Running" : "Not running"}</dd></div>
+                <div><dt>Answer model</dt><dd className="mono" style={{ fontSize: 13 }}>{status.chat_model ?? "None"}</dd></div>
+                <div><dt>Embedding model</dt><dd className="mono" style={{ fontSize: 13 }}>{status.embed_model ?? "None"}</dd></div>
+                <div><dt>OCR</dt><dd>{status.ocr}</dd></div>
+                <div><dt>Vectors</dt><dd className="mono">{status.vectors.toLocaleString("en-US")}</dd></div>
+                <div><dt>Internet</dt><dd>{status.online ? "Connected, not used" : "Offline"}</dd></div>
+              </dl>
+            )}
+            {status && status.cloud_models.length > 0 && (
+              <Notice tone="warn">Cloud models detected in Ollama ({status.cloud_models.join(", ")}). Use local models to keep files private.</Notice>
+            )}
+          </section>
+        </div>
       </div>
     </AppShell>
   );

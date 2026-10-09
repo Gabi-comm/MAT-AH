@@ -102,7 +102,7 @@ export function LinisPage() {
   );
 
   return (
-    <AppShell page="linis" title="Clean up">
+    <AppShell page="linis" title="Clean up" showCompanion={false}>
       <form className={`seam-field${scan.status === "loading" ? " is-busy" : ""}`} onSubmit={(e) => { e.preventDefault(); rescan(); }} aria-busy={scan.status === "loading"}>
         <Icon name="folder" size={20} />
         <label htmlFor="linis-folder" className="sr-only">Folder to check</label>
