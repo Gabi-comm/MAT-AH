@@ -5,7 +5,7 @@ import { App } from "../../App";
 import type { Proposal } from "../../services/types";
 import { deferred, fakeBackend, proposal } from "../../test/fakeBackend";
 
-const irisState = () => screen.getByTestId("iris-companion").getAttribute("data-iris-state");
+const irisState = () => screen.getByTestId("app-shell").getAttribute("data-iris-state");
 
 describe("Kilos approval", () => {
   beforeEach(() => {

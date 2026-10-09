@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { MatahSymbol, MatahWordmark } from "../../branding/MatahLogo";
 import { useStatus } from "../../hooks/StatusContext";
 import { hrefFor, type Page } from "../../hooks/useRoute";
-import { IrisCompanion } from "../../mascot/IrisCompanion";
+import { useIris } from "../../mascot/IrisContext";
 import { NavIris } from "../../mascot/NavIris";
 import { usePrefs } from "../../prefs/PrefsContext";
 import { useBackend } from "../../services/BackendContext";
@@ -111,19 +111,18 @@ export function AppShell({
   page,
   title,
   children,
-  showCompanion = true,
 }: {
   page: Page;
   title: string;
   /** Kept for call-site compatibility; the topbar no longer shows it. */
   eyebrow?: string;
   children: ReactNode;
-  showCompanion?: boolean;
 }) {
   const backend = useBackend();
   const { prefs } = usePrefs();
+  const { state: irisState } = useIris();
   return (
-    <div className={`shell${prefs.sidebarCollapsed ? " is-collapsed" : ""}`}>
+    <div className={`shell${prefs.sidebarCollapsed ? " is-collapsed" : ""}`} data-testid="app-shell" data-iris-state={irisState}>
       <a className="skip-link" href="#main">
         Skip to content
       </a>
@@ -152,7 +151,6 @@ export function AppShell({
           <div className="topbar-title">{title}</div>
           {backend.isDemo && <span className="demo-badge">Demo data</span>}
           <div className="row gap-2" style={{ marginLeft: "auto", alignItems: "flex-end" }}>
-            {showCompanion && <IrisCompanion />}
             <ThemeToggle />
           </div>
         </header>

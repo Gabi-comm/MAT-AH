@@ -6,7 +6,7 @@ import { ApiError } from "../../services/apiClient";
 import type { SearchResponse } from "../../services/types";
 import { deferred, fakeBackend, hit, searchResponse } from "../../test/fakeBackend";
 
-const irisState = () => screen.getByTestId("iris-companion").getAttribute("data-iris-state");
+const irisState = () => screen.getByTestId("app-shell").getAttribute("data-iris-state");
 
 function go(q: string) {
   window.location.hash = `#/hanap?q=${encodeURIComponent(q)}`;
@@ -30,7 +30,6 @@ describe("Hanap search lifecycle and Iris", () => {
     expect(screen.getByText("Best match")).toBeInTheDocument();
     expect(irisState()).toBe("found");
     await waitFor(() => expect(irisState()).toBe("celebrating"));
-    expect(screen.getByTestId("iris-companion")).toHaveTextContent("Found it!");
     await waitFor(() => expect(irisState()).toBe("idle"), { timeout: 2500 });
     // Results stay usable throughout.
     expect(screen.getByRole("button", { name: "Preview GCash_receipt.jpg" })).toBeEnabled();

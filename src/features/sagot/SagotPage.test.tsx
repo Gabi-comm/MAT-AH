@@ -37,6 +37,6 @@ describe("Sagot", () => {
     const res: AskResponse = { ...base, question: "q", status: "offline", answer: null, message: "Local AI is not running.", sources: [] };
     render(<App backend={fakeBackend({ ask: vi.fn(async () => res) })} startup={false} />);
     expect(await screen.findByText("The local AI is offline.", { selector: "strong" })).toBeInTheDocument();
-    expect(screen.getByTestId("iris-companion")).toHaveAttribute("data-iris-state", "unavailable");
+    expect(screen.getByTestId("app-shell")).toHaveAttribute("data-iris-state", "unavailable");
   });
 });

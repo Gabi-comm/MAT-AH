@@ -48,7 +48,7 @@ export function HomePage({ navigate }: { navigate: (p: Page, params?: Record<str
   const totalFiles = status ? Object.values(status.files).reduce((a, b) => a + b, 0) : 0;
 
   return (
-    <AppShell page="home" title="Home" showCompanion={false}>
+    <AppShell page="home" title="Home">
       <section className="hero" aria-labelledby="home-h">
         <div className="hero-orb">
           <IrisCompanion size={76} />
