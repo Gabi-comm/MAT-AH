@@ -1,0 +1,200 @@
+{
+  "root": "C:\\Users\\Gab\\Documents\\GitHub\\MAT-AH\\demo_data\\files",
+  "files": [
+    {
+      "path": "School/Enrollment_Announcement.pdf",
+      "probe": "pre-advising",
+      "kind": "pdf",
+      "page_of_probe": 1,
+      "facts": {
+        "deadline": "October 24, 2026",
+        "deadline_page": 2
+      }
+    },
+    {
+      "path": "School/Tuition_Receipt_1stSem.pdf",
+      "probe": "cashier",
+      "kind": "pdf",
+      "facts": {
+        "amount": "18,450.00"
+      }
+    },
+    {
+      "path": "Misc/Club_Newsletter_SAMPLE.pdf",
+      "probe": "soldering",
+      "kind": "pdf"
+    },
+    {
+      "path": "Misc/Dormitory_Rules_SAMPLE.pdf",
+      "probe": "kettles",
+      "kind": "pdf"
+    },
+    {
+      "path": "Pictures/Screenshots/Screenshot_20260928_142233.png",
+      "probe": "clearance",
+      "kind": "image"
+    },
+    {
+      "path": "Pictures/Screenshots/Screenshot_20260811_091502.png",
+      "probe": "membership",
+      "kind": "image",
+      "facts": {
+        "amount": "1,500.00"
+      }
+    },
+    {
+      "path": "Pictures/Screenshots/Screenshot_20251214_200118.png",
+      "probe": "christmas",
+      "kind": "image",
+      "facts": {
+        "amount": "3,275.50"
+      }
+    },
+    {
+      "path": "Pictures/Screenshots/Screenshot_20260905_073010.png",
+      "probe": "pathfit",
+      "kind": "image"
+    },
+    {
+      "path": "Pictures/Screenshots/Screenshot_20261003_221544.png",
+      "probe": "extension",
+      "kind": "image"
+    },
+    {
+      "path": "Pictures/IMG_20260412_101500.jpg",
+      "probe": null,
+      "kind": "image",
+      "note": "beach photo, no text (CLIP demo)"
+    },
+    {
+      "path": "Pictures/Weekly_Steps_Chart.png",
+      "probe": "tracker",
+      "kind": "image"
+    },
+    {
+      "path": "Notes/Thesis_Meeting_Notes.docx",
+      "probe": "questionnaire",
+      "kind": "docx"
+    },
+    {
+      "path": "Notes/Org_Budget_Notes.docx",
+      "probe": "liquidation",
+      "kind": "docx"
+    },
+    {
+      "path": "Misc/Christmas_Party_Plan.docx",
+      "probe": "monito",
+      "kind": "docx"
+    },
+    {
+      "path": "Lectures/CCS3101_Lecture3_Stacks_Queues.pptx",
+      "probe": "modulo",
+      "kind": "pptx",
+      "slide_of_probe": 4
+    },
+    {
+      "path": "Misc/Org_Orientation.pptx",
+      "probe": "publicity",
+      "kind": "pptx"
+    },
+    {
+      "path": "Misc/Recipe_Chicken_Adobo.txt",
+      "probe": "peppercorns",
+      "kind": "text"
+    },
+    {
+      "path": "Misc/Baguio_Trip_Itinerary.md",
+      "probe": "strawberry",
+      "kind": "text"
+    },
+    {
+      "path": "Misc/Books_To_Read.txt",
+      "probe": "filibusterismo",
+      "kind": "text"
+    },
+    {
+      "path": "Misc/Grocery_List.txt",
+      "probe": "pandesal",
+      "kind": "text"
+    },
+    {
+      "path": "Misc/Game_Night_Notes.md",
+      "probe": "codenames",
+      "kind": "text"
+    },
+    {
+      "path": "Misc/Wifi_Troubleshooting.txt",
+      "probe": "router",
+      "kind": "text"
+    },
+    {
+      "path": "Misc/Gym_Routine.txt",
+      "probe": "dips",
+      "kind": "text"
+    },
+    {
+      "path": "Misc/Movie_Watchlist.md",
+      "probe": "goyo",
+      "kind": "text"
+    },
+    {
+      "path": "Misc/Plant_Care.txt",
+      "probe": "pothos",
+      "kind": "text"
+    },
+    {
+      "path": "Misc/Bike_Maintenance.txt",
+      "probe": "chain",
+      "kind": "text"
+    },
+    {
+      "path": "Misc/Song_Lyrics_Draft.txt",
+      "probe": "buwan",
+      "kind": "text"
+    },
+    {
+      "path": "Misc/Laptop_Specs.txt",
+      "probe": "ryzen",
+      "kind": "text"
+    },
+    {
+      "path": "Downloads_demo/Course_Syllabus_CCS3110.pdf",
+      "probe": "scrum",
+      "kind": "dup-original"
+    },
+    {
+      "path": "Downloads_demo/id_picture_2x2.png",
+      "probe": null,
+      "kind": "dup-original"
+    },
+    {
+      "path": "Downloads_demo/consent_form_template.txt",
+      "probe": "voluntarily",
+      "kind": "dup-original"
+    }
+  ],
+  "linis": {
+    "duplicates": [
+      [
+        "Course_Syllabus_CCS3110.pdf",
+        "Course_Syllabus_CCS3110 (1).pdf"
+      ],
+      [
+        "id_picture_2x2.png",
+        "id_picture_2x2 - Copy.png"
+      ],
+      [
+        "consent_form_template.txt",
+        "consent_form_template (2).txt"
+      ]
+    ],
+    "zero_byte": [
+      "New Text Document.txt",
+      "untitled.txt"
+    ],
+    "empty_folders": [
+      "New folder",
+      "extracted_zip"
+    ]
+  }
+}
