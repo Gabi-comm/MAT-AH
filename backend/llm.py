@@ -58,14 +58,56 @@ def chat_model() -> str | None:
     return None
 
 
+_caps: dict[str, list[str]] = {}
+
+
+def capabilities(model: str) -> list[str]:
+    if model not in _caps:
+        try:
+            _caps[model] = list(_client.show(model).capabilities or [])
+        except Exception:
+            return []
+    return _caps[model]
+
+
+def vision_model() -> str | None:
+    """The chat model if it can see images (gemma4 can), else any installed local vision model."""
+    _refresh()
+    m = chat_model()
+    if m and "vision" in capabilities(m):
+        return m
+    for name in _state["models"]:
+        if not name.endswith("-cloud") and "vision" in capabilities(name):
+            return name
+    return None
+
+
+def describe_image(path, prompt: str) -> str:
+    from PIL import Image
+    import io
+    with Image.open(path) as im:  # downscale: faster, and enough for captions
+        im = im.convert("RGB")
+        im.thumbnail((896, 896))
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=85)
+    r = _client.chat(model=vision_model(), keep_alive=KEEP_ALIVE, think=False, options=_opts(0.2),
+                     messages=[{"role": "user", "content": prompt, "images": [buf.getvalue()]}])
+    return _strip_think(r.message.content or "")
+
+
 def _opts(temperature: float) -> dict:
     return {"temperature": temperature, "num_ctx": 8192}
 
 
-def chat(system: str, user: str, temperature: float = 0.2) -> str:
+def chat(system: str, user: str, temperature: float = 0.2, images: list[bytes] | None = None) -> str:
+    msg = {"role": "user", "content": user}
+    model = chat_model()
+    if images:
+        model = vision_model() or model
+        msg["images"] = images
     r = _client.chat(
-        model=chat_model(), keep_alive=KEEP_ALIVE, think=False, options=_opts(temperature),
-        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+        model=model, keep_alive=KEEP_ALIVE, think=False, options=_opts(temperature),
+        messages=[{"role": "system", "content": system}, msg],
     )
     return _strip_think(r.message.content or "")
 
