@@ -4,7 +4,7 @@ import { Notice, Progress, Skeleton, useToast } from "../../components/feedback/
 import { Icon } from "../../components/Icon";
 import { useStatus } from "../../hooks/StatusContext";
 import { usePrefs } from "../../prefs/PrefsContext";
-import type { MotionPref, ThemePref } from "../../prefs/preferences";
+import type { ThemePref } from "../../prefs/preferences";
 import { useBackend } from "../../services/BackendContext";
 import { isAbort } from "../../services/apiClient";
 import { indexPhaseText, plural } from "../../services/normalize";
@@ -16,11 +16,6 @@ const THEMES: { id: ThemePref; label: string }[] = [
   { id: "light", label: "Light" },
   { id: "dark", label: "Dark" },
   { id: "system", label: "System" },
-];
-const MOTIONS: { id: MotionPref; label: string }[] = [
-  { id: "full", label: "Full" },
-  { id: "subtle", label: "Subtle" },
-  { id: "none", label: "Off" },
 ];
 
 function Folders() {
@@ -207,16 +202,6 @@ export function SettingsPage({ section }: { section?: string }) {
               ))}
             </div>
           </div>
-          <div className="setting-row">
-            <span>Animation</span>
-            <div className="segmented" role="radiogroup" aria-label="Animation">
-              {MOTIONS.map((m) => (
-                <button key={m.id} role="radio" aria-checked={prefs.motion === m.id} onClick={() => update({ motion: m.id })}>
-                  {m.label}
-                </button>
-              ))}
-            </div>
-          </div>
           <label className="switch">
             <input type="checkbox" checked={prefs.followSystemMotion} onChange={(e) => update({ followSystemMotion: e.target.checked })} />
             Follow system reduced motion
@@ -224,13 +209,7 @@ export function SettingsPage({ section }: { section?: string }) {
         </section>
 
         <section className="card stack gap-3" aria-labelledby="iris-h">
-          <div className="setting-row">
-            <h2 id="iris-h" className="card-title">Iris</h2>
-            <label className="switch">
-              <input type="checkbox" checked={prefs.iris.visible} onChange={(e) => update({ iris: { visible: e.target.checked } })} />
-              Show Iris
-            </label>
-          </div>
+          <h2 id="iris-h" className="card-title">Iris</h2>
           {!customizing && (
             <button className="btn btn-line" style={{ alignSelf: "flex-start" }} onClick={() => setCustomizing(true)}>
               <Icon name="palette" /> Customize Iris

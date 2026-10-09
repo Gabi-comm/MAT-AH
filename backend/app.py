@@ -292,6 +292,27 @@ def ops(con=Depends(db)):
     return kilos.history(con)
 
 
+# ---------- local LLM settings ----------
+def _llm_info() -> dict:
+    return {"config": llm.config(), "defaults": llm.DEFAULTS, "auto_order": llm.CHAT_PREFS,
+            "up": llm.reachable(), "installed": [m for m in llm.installed() if not m.endswith("-cloud")],
+            "chat_model": llm.chat_model(), "vision_model": llm.vision_model(), "embed_model": llm.EMBED_MODEL,
+            "embed_installed": llm.embed_available()}
+
+
+@app.get("/api/llm")
+def get_llm(refresh: bool = False):
+    if refresh:
+        llm.refresh()
+    return _llm_info()
+
+
+@app.put("/api/llm")
+def put_llm(patch: dict):
+    llm.set_config(patch)
+    return _llm_info()
+
+
 @app.get("/api/status")
 def get_status(con=Depends(db)):
     return {**status.snapshot(con), "indexing": scan.progress["running"], "index": scan.progress,

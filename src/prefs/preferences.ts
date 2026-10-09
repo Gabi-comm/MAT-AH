@@ -34,7 +34,6 @@ export const DEFAULT_PREFS: Preferences = {
 };
 
 const THEMES: ThemePref[] = ["light", "dark", "system"];
-const MOTIONS: MotionPref[] = ["full", "subtle", "none"];
 const PRESETS: IrisPresetId[] = ["classic", "ube", "mint", "midnight", "peach", "sunshine", "rose"];
 const ACCESSORIES: IrisAccessory[] = ["none", "glasses", "headphones", "gradcap", "beanie", "bowtie", "headband", "detective"];
 const EXPRESSIONS: IrisExpression[] = ["classic", "cheerful", "curious", "calm"];
@@ -50,13 +49,14 @@ export function sanitize(raw: unknown): Preferences {
   return {
     version: 1,
     theme: pick(r.theme, THEMES, DEFAULT_PREFS.theme),
-    motion: pick(r.motion, MOTIONS, DEFAULT_PREFS.motion),
+    // No Settings control for these any more: always the defaults, so an old saved "off" can't get stuck.
+    motion: DEFAULT_PREFS.motion,
     followSystemMotion: typeof r.followSystemMotion === "boolean" ? r.followSystemMotion : DEFAULT_PREFS.followSystemMotion,
     iris: {
       preset: pick(iris.preset, PRESETS, DEFAULT_PREFS.iris.preset),
       accessory: pick(iris.accessory, ACCESSORIES, DEFAULT_PREFS.iris.accessory),
       expression: pick(iris.expression, EXPRESSIONS, DEFAULT_PREFS.iris.expression),
-      visible: typeof iris.visible === "boolean" ? iris.visible : DEFAULT_PREFS.iris.visible,
+      visible: DEFAULT_PREFS.iris.visible,
     },
   };
 }

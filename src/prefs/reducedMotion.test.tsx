@@ -27,9 +27,9 @@ describe("system reduced motion", () => {
 
   it("can be overridden when the user stops following the system", () => {
     mockReduce(true);
-    localStorage.setItem(PREFS_KEY, JSON.stringify({ followSystemMotion: false, motion: "subtle" }));
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ followSystemMotion: false }));
     render(<App backend={fakeBackend()} startup={false} />);
-    expect(document.documentElement.dataset.motion).toBe("subtle");
+    expect(document.documentElement.dataset.motion).toBe("full");
   });
 
   it("shows the branded startup once per session when motion is on", () => {

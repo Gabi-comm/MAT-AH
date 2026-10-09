@@ -30,11 +30,12 @@ describe("Settings: theme, motion and Iris customization", () => {
     expect(document.documentElement.dataset.theme).toBe("dark");
   });
 
-  it("motion setting is applied and the system preference can win", async () => {
+  it("has no Animation or Show Iris controls, and an old saved 'off' is ignored", () => {
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ motion: "none", iris: { visible: false } }));
     render(<App backend={fakeBackend()} startup={false} />);
-    await userEvent.click(within(screen.getByRole("radiogroup", { name: "Animation" })).getByRole("radio", { name: "Off" }));
-    expect(document.documentElement.dataset.motion).toBe("none");
-    expect(stored().motion).toBe("none");
+    expect(screen.queryByRole("radiogroup", { name: "Animation" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "Show Iris" })).not.toBeInTheDocument();
+    expect(document.documentElement.dataset.motion).toBe("full");
   });
 
   it("customizes Iris, saves locally, and resets to the approved default", async () => {
