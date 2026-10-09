@@ -126,8 +126,23 @@ def _strip_think(s: str) -> str:
     return s.strip()
 
 
+_query_cache: dict[str, np.ndarray] = {}
+
+
 def embed(texts: list[str], kind: str = "doc") -> np.ndarray:
-    """embeddinggemma prompt formats from its model card."""
+    """embeddinggemma prompt formats from its model card. Single queries are cached."""
+    if kind == "query" and len(texts) == 1 and texts[0] in _query_cache:
+        return _query_cache[texts[0]][None, :]
+    if kind == "query" and len(texts) == 1:
+        v = _embed(texts, kind)
+        if len(_query_cache) > 512:
+            _query_cache.clear()
+        _query_cache[texts[0]] = v[0]
+        return v
+    return _embed(texts, kind)
+
+
+def _embed(texts: list[str], kind: str) -> np.ndarray:
     if kind == "query":
         texts = [f"task: search result | query: {t}" for t in texts]
     else:

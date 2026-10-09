@@ -62,7 +62,7 @@
   font-weight: 500;
   text-align: left;
   width: 100%;
-  transition: background var(--t-hover) ease, color var(--t-hover) ease, min-height var(--t-state) var(--ease-settle);
+  transition: background var(--t-hover) ease, color var(--t-hover) ease;
 }
 
 .nav-item:hover {
@@ -1425,7 +1425,7 @@ details.tech pre {
   height: 16px;
   border-radius: 50%;
   background: var(--text-secondary);
-  transition: transform var(--t-state) var(--ease-spring), background var(--t-hover) ease;
+  transition: transform var(--t-state) var(--ease-aperture), background var(--t-hover) ease;
 }
 
 .switch input:checked {

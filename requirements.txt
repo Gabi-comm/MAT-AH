@@ -17,5 +17,6 @@ open_clip_torch
 transformers           # text tower of the multilingual CLIP (XLM-RoBERTa)
 sentencepiece
 faster-whisper         # speech in videos and audio (CTranslate2, int8 on CPU)
+av==15.1.0             # faster-whisper 1.2 breaks on PyAV 19 (metadata_errors)
 pytest
 httpx

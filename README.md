@@ -44,8 +44,9 @@ Reading a whole user folder happens in phases, so search is useful within minute
 | Phase | What happens |
 |---|---|
 | Listing | Walk the user folder, skipping system folders, app data, caches and code dependencies (`node_modules`, `.git`, virtualenvs…). Every file becomes findable by name and folder. On the dev laptop: ~378k files on disk → ~38k listed in under a minute. |
-| Reading | Documents first (newest first), then images (OCR), then audio/video (keyframes, on-screen text, speech with timestamps). |
-| Seeing | CLIP vectors for photos and video keyframes: visual search with no text needed. |
+| Reading | Documents and your own images first (text, OCR), newest first; then video keyframes and on-screen text; dataset images last. |
+| Seeing | CLIP vectors for photos and video keyframes: visual search with no text needed. Your own photos are seen before any video is read. |
+| Listening | Speech in videos and audio (faster-whisper `base`, int8 CPU), shortest files first, as timestamped passages. |
 | Embedding | Meaning vectors for big files deferred from reading (books over 150 chunks). |
 | Describing | Optional: a local vision model (gemma4) writes captions with Filipino/English keywords for recent images (`MATAH_CAPTION_LIMIT` per run). |
 

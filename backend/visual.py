@@ -84,10 +84,20 @@ def embed_images(images: list) -> np.ndarray:
     return normalize(np.concatenate(out))
 
 
+_text_cache: dict[str, np.ndarray] = {}
+
+
 def embed_text(texts: list[str]) -> np.ndarray:
+    """Query text -> CLIP vectors. Cached: Sagot and repeat searches reuse them instantly."""
     import torch
     if not ready():
         return np.zeros((0, 0), dtype=np.float32)
+    if all(t in _text_cache for t in texts):
+        return np.stack([_text_cache[t] for t in texts])
     with torch.no_grad():
         tok = _m["tokenizer"](texts).to(_m["device"])
-        return normalize(_m["model"].encode_text(tok).float().cpu().numpy())
+        out = normalize(_m["model"].encode_text(tok).float().cpu().numpy())
+    if len(_text_cache) > 512:
+        _text_cache.clear()
+    _text_cache.update(zip(texts, out))
+    return out
