@@ -33,7 +33,7 @@ def connect(path: Path | None = None) -> sqlite3.Connection:
     con = sqlite3.connect(p, check_same_thread=False, isolation_level=None)
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA journal_mode=WAL")
-    con.execute("PRAGMA foreign_keys=OFF")
+    con.execute("PRAGMA busy_timeout=8000")
     con.executescript(SCHEMA)
     return con
 
