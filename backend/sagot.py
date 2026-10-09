@@ -24,15 +24,26 @@ def _fold(s: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c)).lower()
 
 
-def _norm_num(s: str) -> str:
-    s = s.replace(",", "")
-    if "." in s:
-        s = s.rstrip("0").rstrip(".")
-    return s
+def _norm_num(s: str) -> set[str]:
+    """Canonical forms that survive OCR/locale separators: '3,275.50' == '3.275.50' == '3275.5'; '18,450.00' == '18450'."""
+    m = re.fullmatch(r"(.*?)[.,](\d{2})", s)
+    whole, dec = (m.group(1), m.group(2)) if m and m.group(1) else (s, "")
+    digits = re.sub(r"[.,]", "", whole)
+    forms = {digits.lstrip("0") or "0"}
+    if dec and dec != "00":
+        forms.add(forms.copy().pop() + "." + dec.rstrip("0"))
+    return forms
 
 
 def _nums_in(text: str) -> set[str]:
-    return {_norm_num(n) for n in NUM_RE.findall(text)}
+    out: set[str] = set()
+    for n in NUM_RE.findall(text):
+        out |= _norm_num(n)
+    return out
+
+
+def _claims_in(text: str) -> list[set[str]]:
+    return [_norm_num(n) for n in NUM_RE.findall(text)]
 
 
 def _sentences(text: str) -> list[str]:
@@ -58,7 +69,7 @@ def verify(answer: str, sources: list[dict]) -> tuple[bool, list[str]]:
         cites = [int(c) for c in CITE_RE.findall(sent) if 1 <= int(c) <= n] or last_cites
         last_cites = cites or last_cites
         body = CITE_RE.sub(" ", sent)
-        claimed = _nums_in(body)
+        claimed = _claims_in(body)
         months = {m for m in MONTHS if len(m) > 3 and re.search(rf"\b{m}\b", _fold(body))}
         if not (claimed or months):
             continue
@@ -67,9 +78,9 @@ def verify(answer: str, sources: list[dict]) -> tuple[bool, list[str]]:
             continue
         pool_nums = set().union(*(nums[c] for c in cites))
         pool_text = " ".join(texts[c] for c in cites)
-        for x in claimed:
-            if x not in pool_nums:
-                problems.append(f"'{x}' not found in cited source(s) {cites}")
+        for forms in claimed:
+            if not (forms & pool_nums):
+                problems.append(f"'{max(forms, key=len)}' not found in cited source(s) {cites}")
         for m in months:
             if not re.search(rf"\b{m}", pool_text) and not re.search(rf"\b{m[:3]}\b", pool_text):
                 problems.append(f"'{m}' not found in cited source(s) {cites}")

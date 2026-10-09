@@ -37,8 +37,9 @@ def now() -> str:
 
 
 def safe_folder_name(s: str) -> str:
-    s = BAD_NAME.sub(" ", s).strip().strip(".")
-    s = re.sub(r"\s+", " ", s)[:60]
+    s = BAD_NAME.sub(" ", s)
+    s = re.sub(r"\.{2,}", " ", s)
+    s = re.sub(r"\s+", " ", s).strip(" .")[:60]
     return s or "MAT-AH Organized"
 
 
