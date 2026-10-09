@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pymupdf
+python-docx
+python-pptx
+pillow
+numpy
+send2trash
+ollama
+rapidocr_onnxruntime
+pytest
+httpx
