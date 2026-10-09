@@ -1,6 +1,6 @@
-/* ===================== App shell: one glowing panel, glass rail inside ===================== */
+/* ===================== App shell: full-screen aurora, glass rail inside ===================== */
 
-/* The panel: rounded, carries the moving aurora, holds the rail and the page. */
+/* Full screen: carries the moving aurora, holds the rail and the page. */
 .shell {
   position: relative;
   isolation: isolate;
@@ -12,16 +12,10 @@
 }
 
 @media (min-width: 900px) {
-  #root:has(> .shell) {
-    padding: 10px;
-  }
-
   .shell {
     flex-wrap: nowrap;
     height: 100%;
     min-height: 0;
-    border-radius: var(--r-panel);
-    border: 1px solid var(--glass-edge);
     overflow: hidden;
   }
 }
