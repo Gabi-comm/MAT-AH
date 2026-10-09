@@ -93,7 +93,7 @@ h4 {
   min-height: 100%;
 }
 .app.has-viewer {
-  grid-template-columns: 280px minmax(0, 1fr) minmax(380px, 44vw);
+  grid-template-columns: 260px minmax(560px, 1fr) minmax(380px, 40vw);
 }
 main {
   padding: 18px 40px 80px;

@@ -320,7 +320,7 @@ export function Viewer({ target, roots, onClose }: { target: ViewTarget; roots: 
       <FileActions file={f} loc={target.locator} onView={() => api.open(f.id)} />
       <div className="stage">
         {err && <p className="error">{err}</p>}
-        {f.kind === 'pdf' && <iframe key={`${f.id}-${page}`} title={f.name} src={`${rawUrl(f.id)}#page=${page ?? 1}&view=FitH`} />}
+        {f.kind === 'pdf' && <iframe key={`${f.id}-${page}`} title={f.name} src={`${rawUrl(f.id)}#page=${page ?? 1}&view=FitH&navpanes=0`} />}
         {f.kind === 'image' && meta && <OcrImage id={f.id} loc={meta.locator} needles={target.highlight} />}
         {f.kind !== 'pdf' && f.kind !== 'image' && meta && (
           <pre className="textview">

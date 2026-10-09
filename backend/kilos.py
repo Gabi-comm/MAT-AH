@@ -27,7 +27,8 @@ PLAN_SCHEMA = {
 }
 
 SYSTEM = """You are Kilos, the action agent of MAT-AH. The user wants files organized.
-Choose which candidate files belong together for the request and name ONE new folder for them.
+Choose which candidate files clearly belong to what the user asked for and name ONE new folder for them.
+Leave a file out when it is only loosely related; a smaller, correct plan is better than a big one.
 Use only file ids from the candidate list. Folder name: short, Title Case, no slashes.
 Give a one-sentence reason in the user's language."""
 
@@ -53,8 +54,12 @@ def unique_dest(dst: Path, taken: set[str]) -> Path:
 
 
 def _candidates(con, request: str) -> list[dict]:
-    res = search(con, request, limit=15)
-    return [h for h in res["hits"] if h["score"] > 0][:15]
+    hits = [h for h in search(con, request, limit=15)["hits"] if h["score"] > 0]
+    if not hits:
+        return []
+    top = hits[0]["score"]
+    # Keep strong matches only: a keyword hit, or meaning-only hits that score close to the best one.
+    return [h for h in hits if "keyword" in h["why"] or h["score"] >= 0.6 * top][:10]
 
 
 def _rules_plan(request: str, cands: list[dict]) -> dict:

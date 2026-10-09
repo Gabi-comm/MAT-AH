@@ -4,5 +4,5 @@ __pycache__/
 data/
 web/node_modules/
 web/dist/
-demo_data/files/
+demo_data/My Files/
 .pytest_cache/

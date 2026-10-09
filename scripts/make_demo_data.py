@@ -348,7 +348,7 @@ def make_downloads():
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default=str(ROOT / "demo_data" / "files"))
+    ap.add_argument("--out", default=str(ROOT / "demo_data" / "My Files"))
     ap.add_argument("--reset", action="store_true", help="delete the output folder first")
     a = ap.parse_args()
     OUT = Path(a.out).resolve()

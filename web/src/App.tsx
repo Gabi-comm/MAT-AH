@@ -46,7 +46,9 @@ const MODES: { id: Mode; label: string; hint: string; placeholder: string; examp
 
 export default function App() {
   const [mode, setMode] = useState<Mode>('hanap')
-  const [q, setQ] = useState('')
+  const [queries, setQueries] = useState<Record<Mode, string>>({ hanap: '', sagot: '', linis: '', kilos: '' })
+  const q = queries[mode]
+  const setQ = (v: string) => setQueries((all) => ({ ...all, [mode]: v }))
   const [roots, setRoots] = useState<Root[]>([])
   const [status, setStatus] = useState<Status | null>(null)
   const [progress, setProgress] = useState<IndexProgress | null>(null)
