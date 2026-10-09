@@ -2,6 +2,8 @@
 # Usage:  powershell -ExecutionPolicy Bypass -File .\run.ps1 [-Demo] [-Rebuild]
 param([switch]$Demo, [switch]$Rebuild)
 $ErrorActionPreference = 'Stop'
+$env:HF_HUB_DISABLE_XET = '1'  # plain HTTP model downloads (Xet stalled on this network)
+$env:HF_HUB_DISABLE_SYMLINKS_WARNING = '1'
 Set-Location $PSScriptRoot
 
 if (-not (Test-Path .venv)) {

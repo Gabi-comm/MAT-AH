@@ -3,10 +3,17 @@ uvicorn[standard]
 pymupdf
 python-docx
 python-pptx
+openpyxl
 pillow
 numpy
 send2trash
 ollama
-rapidocr_onnxruntime
+rapidocr_onnxruntime   # OCR (ONNX models ship inside the package; brings opencv for video frames)
+pywin32                # Windows Search index bridge (whole-computer recall)
+# Visual search (CLIP). CPU wheel keeps the install small:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch
+open_clip_torch
+faster-whisper         # speech in videos and audio (CTranslate2, int8 on CPU)
 pytest
 httpx
