@@ -1,0 +1,123 @@
+"""Sagot: RAG answer with numbered citations, then a grounding verifier that enforces 'no invented figures'."""
+import re
+import time
+import unicodedata
+
+from . import llm
+from .hanap import MONTHS, top_chunks
+
+SYSTEM = """You are Sagot, the answer agent of MAT-AH, a private file assistant.
+Answer ONLY from the numbered sources. Rules:
+- Reply in the same language the user used (English, Filipino or Taglish).
+- After every sentence that states a fact, cite its source like [1] or [2].
+- Copy numbers, amounts and dates exactly as written in the source.
+- Keep it short: 1-3 sentences.
+- If the sources do not contain the answer, reply with exactly: INSUFFICIENT"""
+
+INSUFFICIENT_MSG = "Kulang ang ebidensya sa files mo — insufficient evidence. Here are the closest sources."
+
+NUM_RE = re.compile(r"\d+(?:[.,]\d+)*")
+CITE_RE = re.compile(r"\[(\d+)\]")
+
+
+def _fold(s: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c)).lower()
+
+
+def _norm_num(s: str) -> str:
+    s = s.replace(",", "")
+    if "." in s:
+        s = s.rstrip("0").rstrip(".")
+    return s
+
+
+def _nums_in(text: str) -> set[str]:
+    return {_norm_num(n) for n in NUM_RE.findall(text)}
+
+
+def _sentences(text: str) -> list[str]:
+    # split after sentence punctuation or after a citation group, keep citations attached
+    parts = re.split(r"(?<=[.!?])\s+(?=[A-Z\"'(])|\n+", text.strip())
+    return [p.strip() for p in parts if p.strip()]
+
+
+def verify(answer: str, sources: list[dict]) -> tuple[bool, list[str]]:
+    """Every [n] must exist; every number, amount and month in a sentence must appear in that sentence's cited chunks."""
+    problems = []
+    n = len(sources)
+    all_cites = [int(c) for c in CITE_RE.findall(answer)]
+    if not all_cites:
+        problems.append("no citations")
+    for c in all_cites:
+        if c < 1 or c > n:
+            problems.append(f"citation [{c}] does not exist")
+    texts = {i + 1: _fold(s["text"]) for i, s in enumerate(sources)}
+    nums = {i: _nums_in(t) for i, t in texts.items()}
+    last_cites: list[int] = []
+    for sent in _sentences(answer):
+        cites = [int(c) for c in CITE_RE.findall(sent) if 1 <= int(c) <= n] or last_cites
+        last_cites = cites or last_cites
+        body = CITE_RE.sub(" ", sent)
+        claimed = _nums_in(body)
+        months = {m for m in MONTHS if len(m) > 3 and re.search(rf"\b{m}\b", _fold(body))}
+        if not (claimed or months):
+            continue
+        if not cites:
+            problems.append(f"uncited figure in: {sent[:60]}")
+            continue
+        pool_nums = set().union(*(nums[c] for c in cites))
+        pool_text = " ".join(texts[c] for c in cites)
+        for x in claimed:
+            if x not in pool_nums:
+                problems.append(f"'{x}' not found in cited source(s) {cites}")
+        for m in months:
+            if not re.search(rf"\b{m}", pool_text) and not re.search(rf"\b{m[:3]}\b", pool_text):
+                problems.append(f"'{m}' not found in cited source(s) {cites}")
+    return (not problems), problems
+
+
+def _source_block(sources: list[dict]) -> str:
+    out = []
+    for i, s in enumerate(sources, start=1):
+        loc = s["locator"]
+        where = f"page {loc['page']}" if "page" in loc else f"slide {loc['slide']}" if "slide" in loc else "file"
+        out.append(f"[{i}] {s['file']['name']} ({where}):\n{s['text'][:1500]}")
+    return "\n\n".join(out)
+
+
+def _public(s: dict, i: int) -> dict:
+    return {"n": i, "file": s["file"], "locator": {k: v for k, v in s["locator"].items() if k != "boxes"},
+            "chunk_id": s["chunk_id"], "snippet": s["snippet"], "highlight": s["highlight"]}
+
+
+def answer(con, question: str) -> dict:
+    timings = {}
+    t0 = time.perf_counter()
+    sources, res = top_chunks(con, question, 6)
+    timings.update(res["timings"])
+    timings["retrieve"] = round((time.perf_counter() - t0) * 1000 - timings.get("parse", 0), 1)
+    pub = [_public(s, i) for i, s in enumerate(sources, start=1)]
+    base = {"question": question, "sources": pub, "timings": timings, "model": llm.chat_model(),
+            "search_mode": res["mode"]}
+    if not llm.available():
+        return {**base, "status": "offline", "answer": None,
+                "message": "Local AI is not running — showing the best matching sources instead."}
+    if not sources:
+        return {**base, "status": "insufficient", "answer": None, "message": INSUFFICIENT_MSG, "problems": ["no sources"]}
+
+    t1 = time.perf_counter()
+    raw = llm.chat(SYSTEM, f"Sources:\n\n{_source_block(sources)}\n\nQuestion: {question}", temperature=0.1)
+    timings["generate"] = round((time.perf_counter() - t1) * 1000, 1)
+
+    t2 = time.perf_counter()
+    if raw.strip().upper().startswith("INSUFFICIENT") or not raw.strip():
+        ok, problems, status = False, ["model said INSUFFICIENT"], "insufficient"
+    else:
+        ok, problems = verify(raw, sources)
+        status = "grounded" if ok else "insufficient"
+    timings["verify"] = round((time.perf_counter() - t2) * 1000, 1)
+    if not ok:
+        return {**base, "status": status, "answer": None, "rejected": raw if raw.strip().upper() != "INSUFFICIENT" else None,
+                "message": INSUFFICIENT_MSG, "problems": problems}
+    cited = sorted({int(c) for c in CITE_RE.findall(raw)})
+    return {**base, "status": "grounded", "answer": raw.strip(), "cited": cited, "problems": []}
