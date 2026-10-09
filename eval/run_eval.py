@@ -84,9 +84,10 @@ def main():
            f"Models: chat `{llm.chat_model()}`, embeddings `{llm.EMBED_MODEL if llm.embed_available() else 'none'}`, "
            "OCR RapidOCR (ONNX). Everything ran locally.", "",
            f"Full index of the demo folder: {index_s:.1f} s.", "",
-           "## Search (Hanap): top-3 hit rate, 30 queries", "",
+           f"## Search (Hanap): top-3 hit rate, {len(queries)} queries", "",
            "| Queries | Keyword only | Hybrid (keyword + meaning) |", "|---|---|---|"]
-    for lang, label in (("en", "English (10)"), ("fil", "Filipino (10)"), ("taglish", "Taglish (10)"), (None, "**All (30)**")):
+    n_of = lambda l: sum(1 for x in queries if l is None or x["lang"] == l)
+    for lang, label in (("en", f"English ({n_of('en')})"), ("fil", f"Filipino ({n_of('fil')})"), ("taglish", f"Taglish ({n_of('taglish')})"), (None, f"**All ({len(queries)})**")):
         k, n = rate("keyword", lang)
         h, _ = rate("hybrid", lang)
         out.append(f"| {label} | {k}/{n} ({k / n:.0%}) | {h}/{n} ({h / n:.0%}) |")
@@ -102,7 +103,7 @@ def main():
     if sagot_rows:
         ans_ok = [r for r in sagot_rows if r["kind"] == "answerable"]
         un_ok = [r for r in sagot_rows if r["kind"] == "unanswerable"]
-        out += ["## Answers (Sagot): 10 questions, 3 unanswerable", "",
+        out += [f"## Answers (Sagot): {len(sagot_rows)} questions, {len(un_ok)} unanswerable", "",
                 f"- Correct grounded answers: {sum(r['ok'] for r in ans_ok)}/{len(ans_ok)}",
                 f"- Correct \"insufficient evidence\" on unanswerable: {sum(r['ok'] for r in un_ok)}/{len(un_ok)}",
                 f"- Median generate {med([r['timings'].get('generate', 0) for r in sagot_rows])} ms, "
