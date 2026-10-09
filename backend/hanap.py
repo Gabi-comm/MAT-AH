@@ -206,8 +206,10 @@ def _snippet(text: str, needles: list[str], width: int = 220) -> str:
 
 
 # Visual (CLIP) cosine floors: below these a "match" is noise. Calibrated in eval/visual_check.
-VIS_MIN_VISUAL_QUERY = 0.20  # the query asks for a picture/video ("litrato ng aso")
-VIS_MIN_ANY_QUERY = 0.27     # any other query: only strong visual matches join in
+# Visual (CLIP) floors as z-scores over all images/frames for this query. Calibrated on 354 real photos:
+# correct top hits stood 3.3-5.2 SD above the mean; vague queries over look-alike photos stayed under 2.
+VIS_Z_VISUAL_QUERY = 2.5  # the query asks for a picture/video ("litrato ng aso")
+VIS_Z_ANY_QUERY = 3.5     # any other query: only standout visual matches join in
 WEIGHTS = {"keyword": 1.0, "meaning": 1.0, "visual": 1.0, "windows": 0.8}
 WHY = {"keyword": "words", "meaning": "meaning", "visual": "looks like", "windows": "Windows index"}
 
@@ -227,12 +229,12 @@ def _file_ranking(con, chunk_ids: list[int]) -> list[tuple[int, int]]:
     return out
 
 
-def _visual_ranking(con, text: str, floor: float, k: int = 80) -> list[tuple[int, None, dict]]:
+def _visual_ranking(con, text: str, min_z: float, k: int = 80) -> list[tuple[int, None, dict]]:
     """CLIP text->image: [(file_id, None, {"t": best frame time, "visual": score})], best frame per file."""
     if not len(VISUAL) or not visual.ready():
         return []
     qv = visual.embed_text([text])[0]
-    vis = [(vid, s) for vid, s in VISUAL.search(qv, k) if s >= floor]
+    vis = VISUAL.search(qv, k, min_z=min_z)
     if not vis:
         return []
     q = ",".join("?" * len(vis))
@@ -271,7 +273,7 @@ def search(con, q: str, limit: int = 20, mode: str = "hybrid", use_llm: bool = T
         try:
             clip_text = " ".join(p["terms"] + p["phrases"]) or q
             lists["visual"] = _visual_ranking(con, clip_text,
-                                              VIS_MIN_VISUAL_QUERY if wants_visual else VIS_MIN_ANY_QUERY)
+                                              VIS_Z_VISUAL_QUERY if wants_visual else VIS_Z_ANY_QUERY)
         except Exception:
             pass
         if winsearch.available():

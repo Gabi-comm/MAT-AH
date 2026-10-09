@@ -5,16 +5,10 @@ import { Icon } from "../../components/Icon";
 import { Highlighted } from "../../components/files/ResultCard";
 import { PreviewDrawer, type PreviewTarget } from "../../components/files/PreviewDrawer";
 import { useTrackedRequest } from "../../hooks/useTrackedRequest";
-import { hrefFor, type Page } from "../../hooks/useRoute";
+import { type Page } from "../../hooks/useRoute";
 import { useBackend } from "../../services/BackendContext";
 import { answerParts, locatorLong, pathCrumbs } from "../../services/normalize";
 import type { AskResponse, AskSource } from "../../services/types";
-
-const EXAMPLES = [
-  "Ano yung deadline ng enrollment based sa announcement?",
-  "Magkano yung tuition na binayaran ko last semester?",
-  "Ano ang requirements para sa enrollment?",
-];
 
 /** Emphasise amounts and dates that are already in the verified answer text. */
 const EMPH = /(₱\s?[\d,]+(?:\.\d+)?|\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}\b)/g;
@@ -96,13 +90,7 @@ export function SagotPage({ q, navigate }: { q: string; navigate: (p: Page, para
           </form>
 
           {!q && ask.status === "idle" && (
-            <EmptyState iris="idle" title="Itanong mo, sasagutin ko mula sa files mo." body="Every answer links to the exact page it came from. If your files don't say, I'll tell you.">
-              {EXAMPLES.map((x) => (
-                <a key={x} className="chip" href={hrefFor("sagot", { q: x })}>
-                  {x}
-                </a>
-              ))}
-            </EmptyState>
+            <EmptyState iris="idle" title="Itanong mo, sasagutin ko mula sa files mo." body="Every answer links to the exact page it came from. If your files don't say, I'll tell you." />
           )}
 
           {q && (

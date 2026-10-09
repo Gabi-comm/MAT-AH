@@ -14,6 +14,8 @@ pywin32                # Windows Search index bridge (whole-computer recall)
 #   pip install torch --index-url https://download.pytorch.org/whl/cpu
 torch
 open_clip_torch
+transformers           # text tower of the multilingual CLIP (XLM-RoBERTa)
+sentencepiece
 faster-whisper         # speech in videos and audio (CTranslate2, int8 on CPU)
 pytest
 httpx

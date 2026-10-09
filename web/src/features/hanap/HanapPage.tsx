@@ -10,8 +10,6 @@ import { useBackend } from "../../services/BackendContext";
 import { kindLabel, plural } from "../../services/normalize";
 import type { SearchHit, SearchResponse } from "../../services/types";
 
-const SUGGESTIONS = ["screenshot ng GCash receipt", "enrollment announcement PDF", "picture na may red na motor", "resibo last month"];
-
 export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, params?: Record<string, string>) => void }) {
   const backend = useBackend();
   const [draft, setDraft] = useState(q);
@@ -143,13 +141,7 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
       )}
 
       {!q && search.status === "idle" && (
-        <EmptyState iris="idle" title="Ilarawan mo lang." body="You don't need the file name. Describe what's inside, what it looks like, or when you saved it.">
-          {SUGGESTIONS.map((s) => (
-            <a key={s} className="chip" href={hrefFor("hanap", { q: s })}>
-              {s}
-            </a>
-          ))}
-        </EmptyState>
+        <EmptyState iris="idle" title="Ilarawan mo lang." body="You don't need the file name. Describe what's inside, what it looks like, or when you saved it." />
       )}
 
       {search.status === "error" && <ErrorState error={search.error} onRetry={() => run(q)} />}

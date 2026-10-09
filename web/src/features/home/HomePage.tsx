@@ -10,13 +10,6 @@ import { isAbort } from "../../services/apiClient";
 import { indexPhaseText, plural } from "../../services/normalize";
 import type { RootFolder } from "../../services/types";
 
-const CHIPS: { label: string; page: Page; q: string; icon: "search" | "ask" | "organize" | "clean" }[] = [
-  { label: "GCash receipt na ₱1,500", page: "hanap", q: "GCash receipt na ₱1,500", icon: "search" },
-  { label: "Enrollment requirements", page: "kilos", q: "Ipunin mo lahat ng enrollment requirements", icon: "organize" },
-  { label: "Tuition last semester", page: "sagot", q: "Magkano yung tuition na binayaran ko last semester?", icon: "ask" },
-  { label: "Duplicates sa Downloads", page: "linis", q: "", icon: "clean" },
-];
-
 function greeting(): string {
   const h = new Date().getHours();
   return h < 12 ? "Magandang umaga" : h < 18 ? "Magandang hapon" : "Magandang gabi";
@@ -92,14 +85,6 @@ export function HomePage({ navigate }: { navigate: (p: Page, params?: Record<str
           <span className="mono subtle">Enter to run</span>
         </div>
 
-        <div className="row wrap gap-2">
-          {CHIPS.map((c) => (
-            <a key={c.label} className="chip" href={hrefFor(c.page, c.q ? { q: c.q } : undefined)}>
-              <Icon name={c.icon} size={16} />
-              {c.label}
-            </a>
-          ))}
-        </div>
       </section>
 
       <section className="grid-auto-wide" aria-label="Workspace status">

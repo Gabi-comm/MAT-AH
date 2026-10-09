@@ -92,7 +92,9 @@ class VectorStore:
             keep = ~np.isin(self.ids, chunk_ids)
             self.ids, self.mat = self.ids[keep], self.mat[keep]
 
-    def search(self, qvec: np.ndarray, k: int = 50) -> list[tuple[int, float]]:
+    def search(self, qvec: np.ndarray, k: int = 50, min_z: float | None = None) -> list[tuple[int, float]]:
+        """Top-k by cosine. With min_z, keep only items standing min_z standard deviations above the
+        corpus mean for this query: a relative floor that works whatever the model's score scale."""
         with _lock:
             if self.ids.size == 0 or qvec.shape[0] != self.mat.shape[1]:
                 return []
@@ -100,6 +102,9 @@ class VectorStore:
             k = min(k, scores.shape[0])
             top = np.argpartition(-scores, k - 1)[:k]
             top = top[np.argsort(-scores[top])]
+            if min_z is not None and scores.shape[0] >= 20:
+                cut = float(scores.mean() + min_z * scores.std())
+                top = top[scores[top] >= cut]
             return [(int(self.ids[i]), float(scores[i])) for i in top]
 
     def __len__(self):

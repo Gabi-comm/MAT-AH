@@ -10,8 +10,6 @@ import { formatDate } from "../../services/normalize";
 import type { Proposal } from "../../services/types";
 import { ProposalReview } from "./ProposalReview";
 
-const EXAMPLES = ["Ipunin mo lahat ng enrollment requirements", "Ayusin ang mga resibo ng GCash", "Pagsamahin ang thesis files"];
-
 export function KilosPage({ q }: { q: string }) {
   const backend = useBackend();
   const { send } = useIris();
@@ -87,13 +85,7 @@ export function KilosPage({ q }: { q: string }) {
       </div>
 
       {!proposal && propose.status === "idle" && (
-        <EmptyState iris="idle" title="Sabihin kung paano aayusin." body="Describe a group of files. MAT-AH proposes a folder and shows every move before anything happens.">
-          {EXAMPLES.map((x) => (
-            <button key={x} className="chip" onClick={() => setDraft(x)}>
-              {x}
-            </button>
-          ))}
-        </EmptyState>
+        <EmptyState iris="idle" title="Sabihin kung paano aayusin." body="Describe a group of files. MAT-AH proposes a folder and shows every move before anything happens." />
       )}
 
       {proposal && <ProposalReview key={proposal.id} proposal={proposal} onChange={onChange} />}

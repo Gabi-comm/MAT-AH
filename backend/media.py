@@ -76,16 +76,25 @@ def _whisper():
         return _w["model"]
 
 
+def _looping(text: str) -> bool:
+    """A segment that is mostly one word repeated is a decoding loop, not speech."""
+    words = [w.strip(".,!?").lower() for w in text.split()]
+    return len(words) >= 6 and len(set(words)) / len(words) < 0.35
+
+
 def transcribe(path) -> list[dict]:
     """Speech as ~30 s windows: [{"text", "locator": {"t": start, "end": end}}]. Empty when no speech."""
     model = _whisper() if whisper_installed() else None
     if model is None:
         return []
-    segments, info = model.transcribe(str(path), vad_filter=True, beam_size=1)
+    # condition_on_previous_text=False stops Whisper's repetition loops ("itin, itin, itin…")
+    segments, info = model.transcribe(str(path), vad_filter=True, beam_size=1, condition_on_previous_text=False)
     units, buf, start = [], [], None
     for seg in segments:
         if seg.start > MAX_TRANSCRIBE_S:
             break
+        if _looping(seg.text):
+            continue
         if start is None:
             start = seg.start
         buf.append(seg.text.strip())

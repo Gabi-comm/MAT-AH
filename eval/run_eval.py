@@ -31,7 +31,10 @@ def main():
     subprocess.run([sys.executable, str(ROOT / "scripts" / "make_demo_data.py"), "--out", str(files)], check=True)
     os.environ["MATAH_DB"] = str(tmp / "eval.db")
 
-    from backend import folders, hanap, llm, sagot, scan
+    from backend import folders, hanap, llm, sagot, scan, visual, winsearch
+    visual.installed = lambda: False  # the eval set has no images; keep it about text retrieval
+    winsearch.available = lambda: False  # temp folders are not in the Windows index anyway
+    llm.vision_model = lambda: None
     from backend.index import VECTORS, connect
 
     con = connect(tmp / "eval.db")
@@ -117,6 +120,7 @@ def main():
         out += ["## Answers (Sagot)", "", "Skipped: no local chat model was available."]
 
     (ROOT / "eval" / "results.md").write_text("\n".join(out) + "\n", encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")  # the table has ✅/❌; the Windows console is cp1252
     print("\n".join(out))
 
 
