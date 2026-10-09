@@ -85,85 +85,25 @@
     margin: 10px 0 10px 10px;
     overflow-y: auto;
     overflow-x: hidden;
-    transition: flex-basis 240ms var(--ease-settle);
+    transition: flex-basis 240ms var(--ease-settle), padding 240ms var(--ease-settle), margin 240ms var(--ease-settle),
+      opacity 200ms ease 60ms;
   }
 
-  /* Collapsed: an icon strip. Labels stay in the accessibility tree. */
+  /* Hidden: the rail slides fully away; the topbar toggle brings it back. */
   .shell.is-collapsed .rail {
-    flex-basis: 76px;
-    padding-inline: 10px;
-  }
-
-  .shell.is-collapsed .rail-brand {
-    justify-content: center;
+    flex-basis: 0;
+    margin-right: 0;
+    margin-left: 0;
     padding-inline: 0;
-  }
-
-  .shell.is-collapsed .rail-wordmark,
-  .shell.is-collapsed .rail-group,
-  .shell.is-collapsed .rail-status {
-    display: none;
-  }
-
-  .shell.is-collapsed .nav-item {
-    justify-content: center;
-    padding: 0;
-  }
-
-  /* Settings stays at the bottom with the status card hidden. */
-  .shell.is-collapsed .rail > .nav-item:last-child {
-    margin-top: auto;
-  }
-
-  .shell.is-collapsed .nav-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
+    border-width: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: flex-basis 240ms var(--ease-settle), padding 240ms var(--ease-settle), margin 240ms var(--ease-settle),
+      opacity 160ms ease, visibility 0s linear 240ms;
   }
 }
 
-/* Narrow screens: the rail sits on top, so collapsing hides it. */
-@media (max-width: 899px) {
-  .shell.is-collapsed .rail {
-    display: none;
-  }
-}
-
-.rail-brand {
-    justify-content: center;
-    padding-inline: 0;
-  }
-
-  .shell.is-collapsed .rail-wordmark,
-  .shell.is-collapsed .rail-group,
-  .shell.is-collapsed .rail-status {
-    display: none;
-  }
-
-  .shell.is-collapsed .nav-item {
-    justify-content: center;
-    padding: 0;
-  }
-
-  /* Settings stays at the bottom with the status card hidden. */
-  .shell.is-collapsed .rail > .nav-item:last-child {
-    margin-top: auto;
-  }
-
-  .shell.is-collapsed .nav-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-}
-
-/* Narrow screens: the rail sits on top, so collapsing hides it. */
+/* Narrow screens: the rail sits on top, so hiding it just removes it. */
 @media (max-width: 899px) {
   .shell.is-collapsed .rail {
     display: none;

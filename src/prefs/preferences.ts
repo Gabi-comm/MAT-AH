@@ -14,7 +14,7 @@ export interface Preferences {
   motion: MotionPref;
   /** When true, the OS "reduce motion" setting turns decorative motion off. */
   followSystemMotion: boolean;
-  /** Sidebar collapsed to icons (desktop) or hidden (narrow screens). */
+  /** Sidebar hidden entirely; only the topbar toggle shows it again. */
   sidebarCollapsed: boolean;
   iris: {
     preset: IrisPresetId;
