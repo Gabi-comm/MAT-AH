@@ -1,7 +1,8 @@
 /*
-  Branded startup (board 06, "Startup variant"): the hyphen opens and the
-  letters unmask, Iris peeks, then the workspace is already there underneath.
-  About 1.2 s, once per session, skippable, never shown with motion off.
+  Branded startup: the aurora glows up, the hyphen opens and the letters
+  unmask, the tagline and Iris rise, then it dissolves into the workspace.
+  About 3.4 s, once per session, skippable (with a short fade), never shown
+  with motion off.
 */
 import { useEffect, useState } from "react";
 import { MatahWordmark } from "../../branding/MatahLogo";
@@ -9,6 +10,8 @@ import { Iris } from "../../mascot/Iris";
 import { usePrefs } from "../../prefs/PrefsContext";
 
 const KEY = "matah.startup.seen";
+const DURATION = 3400; // keep in step with .startup's exit in components.css
+const SKIP_FADE = 320;
 
 function seen(): boolean {
   try {
@@ -21,6 +24,7 @@ function seen(): boolean {
 export function Startup() {
   const { motion, prefs } = usePrefs();
   const [show, setShow] = useState(() => motion !== "none" && !seen());
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     if (!show) return;
@@ -29,8 +33,8 @@ export function Startup() {
     } catch {
       /* ignore */
     }
-    const t = window.setTimeout(() => setShow(false), 1420);
-    const skip = () => setShow(false);
+    const t = window.setTimeout(() => setShow(false), DURATION);
+    const skip = () => setLeaving(true);
     window.addEventListener("keydown", skip, { once: true });
     return () => {
       window.clearTimeout(t);
@@ -38,17 +42,25 @@ export function Startup() {
     };
   }, [show]);
 
+  // Skipping fades out quickly instead of cutting.
+  useEffect(() => {
+    if (!leaving) return;
+    const t = window.setTimeout(() => setShow(false), SKIP_FADE);
+    return () => window.clearTimeout(t);
+  }, [leaving]);
+
   if (!show) return null;
   return (
-    <div className="startup" role="presentation" onClick={() => setShow(false)}>
-      <button className="startup-skip" onClick={() => setShow(false)}>
+    <div className={`startup${leaving ? " is-leaving" : ""}`} role="presentation" onClick={() => setLeaving(true)}>
+      <span className="startup-glow" aria-hidden="true" />
+      <button className="startup-skip" onClick={() => setLeaving(true)}>
         Skip
       </button>
-      <MatahWordmark height={96} animate style={{ color: "#F6F3EF", maxWidth: "86vw", height: "auto" }} />
-      <div className="row gap-4" style={{ alignItems: "flex-end" }}>
-        <p className="startup-line">Found it!</p>
+      <MatahWordmark height={96} animate className="startup-wordmark" style={{ color: "#F6F3EF", maxWidth: "86vw", height: "auto" }} />
+      <div className="startup-tag">
+        <p className="startup-line">Remember what it was, not where you saved it.</p>
         {prefs.iris.visible && (
-          <span style={{ animation: "rise 1100ms var(--ease-settle) both" }}>
+          <span className="startup-iris">
             <Iris preset={prefs.iris.preset} accessory={prefs.iris.accessory} size={56} theme="dark" state="idle" />
           </span>
         )}

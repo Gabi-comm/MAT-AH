@@ -75,10 +75,6 @@
   to { transform: translateX(0); opacity: 1; }
 }
 
-@keyframes startup-out {
-  to { opacity: 0; visibility: hidden; }
-}
-
 /* ---------- Applied reveals ---------- */
 
 .reveal {

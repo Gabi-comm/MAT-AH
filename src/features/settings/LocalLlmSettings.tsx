@@ -222,6 +222,7 @@ export function LocalLlmSettings() {
   const unknownMissing = missing.filter((m) => !toDownload.some((r) => r.name === m));
   const embedRec = info.embed_installed ? undefined : info.recommended.find((r) => r.uses.includes("embed") && !r.installed);
   const localCount = info.downloaded.filter((d) => !d.embed).length;
+  const embedOnDisk = info.downloaded.some((d) => d.name.split(":")[0] === info.embed_model.split(":")[0]);
 
   return (
     <section className="card stack gap-4" aria-labelledby="llm-h">
@@ -308,7 +309,7 @@ export function LocalLlmSettings() {
         <dl className="kv">
           <div>
             <dt>Embedding model</dt>
-            <dd className="mono" style={{ fontSize: 13 }}>{info.embed_model}{info.embed_installed ? "" : " (not installed)"}</dd>
+            <dd className="mono" style={{ fontSize: 13 }}>{info.embed_model}{info.embed_installed ? "" : embedOnDisk ? " (downloaded; start Ollama)" : " (not installed)"}</dd>
           </div>
         </dl>
         <p className="subtle" style={{ fontSize: 13, margin: 0 }}>

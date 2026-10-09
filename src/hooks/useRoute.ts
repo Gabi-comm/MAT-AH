@@ -2,8 +2,7 @@
   Minimal hash router (#/hanap?q=...). No dependency, works when FastAPI
   serves dist/ as static files, and keeps browser Back/Forward working.
 */
-import { useCallback, useEffect, useRef, useState } from "react";
-import { withViewTransition } from "./viewTransition";
+import { useCallback, useEffect, useState } from "react";
 
 export type Page = "home" | "hanap" | "sagot" | "kilos" | "linis" | "settings";
 const PAGES: Page[] = ["home", "hanap", "sagot", "kilos", "linis", "settings"];
@@ -27,15 +26,8 @@ export function hrefFor(page: Page, params?: Record<string, string>): string {
 
 export function useRoute() {
   const [route, setRoute] = useState<Route>(() => parseHash(window.location.hash));
-  const lastHash = useRef(window.location.hash);
   useEffect(() => {
-    // Switching pages cross-fades (see "Page transitions" in components.css); a new query on the same page doesn't.
-    const on = () => {
-      const next = parseHash(window.location.hash);
-      if (next.page === parseHash(lastHash.current).page) setRoute(next);
-      else withViewTransition(() => setRoute(next), "page-vt");
-      lastHash.current = window.location.hash;
-    };
+    const on = () => setRoute(parseHash(window.location.hash));
     window.addEventListener("hashchange", on);
     return () => window.removeEventListener("hashchange", on);
   }, []);

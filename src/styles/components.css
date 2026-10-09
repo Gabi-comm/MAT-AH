@@ -221,48 +221,23 @@
 .dot.err { background: #ff8a80; }
 
 /* The canvas: a rounded panel with a plum glow over reeded glass. */
-/* ---------- Page transitions (View Transitions API; skipped with motion off) ----------
-   Switching tabs: the rail holds still, the page content fades and rises in,
-   and the background is left alone (its clock keeps it continuous). */
-.rail { view-transition-name: rail; }
-.main { view-transition-name: page; }
-
-/* Clicks during a transition reach the live page instead of the snapshot overlay. */
-::view-transition {
-  pointer-events: none;
+/* ---------- Page transitions ----------
+   Each page mounts fresh content, which fades and rises in. Plain CSS, so
+   clicks are never blocked mid-animation; off with motion off. */
+.page {
+  animation: page-in 420ms var(--ease-settle) both;
 }
 
-html.page-vt::view-transition-old(root),
-html.page-vt::view-transition-new(root),
-html.page-vt::view-transition-group(rail),
-html.page-vt::view-transition-old(rail),
-html.page-vt::view-transition-new(rail) {
-  animation: none;
+.topbar-title {
+  animation: page-in 320ms var(--ease-settle) both;
 }
 
-html.page-vt::view-transition-old(page) {
-  animation: vt-page-out 160ms var(--ease-settle) both;
-}
-
-html.page-vt::view-transition-new(page) {
-  animation: vt-page-in 320ms var(--ease-settle) 60ms both;
-}
-
-@keyframes vt-page-out {
-  to { opacity: 0; transform: translateY(-6px) scale(0.995); }
-}
-
-@keyframes vt-page-in {
-  from { opacity: 0; transform: translateY(10px) scale(0.995); filter: blur(4px); }
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(12px); filter: blur(3px); }
   to { opacity: 1; transform: none; filter: none; }
 }
 
 /* Theme toggle: the new theme grows as a circle from the button over the whole screen. */
-html.theme-vt .rail,
-html.theme-vt .main {
-  view-transition-name: none;
-}
-
 html.theme-vt::view-transition-old(root) {
   animation: none;
 }
@@ -1785,20 +1760,72 @@ legend {
   padding: 0;
 }
 
-/* ===================== Startup reveal ===================== */
+/* ===================== Startup reveal (about 3.4 s) ===================== */
 
 .startup {
   position: fixed;
   inset: 0;
   z-index: 80;
-  background: radial-gradient(50% 45% at 50% 40%, rgba(110, 36, 130, 0.5), transparent 75%), #050407;
+  overflow: hidden;
+  isolation: isolate;
+  background: #030205;
   color: #f4f0f7;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 28px;
-  animation: startup-out 260ms var(--ease-exit) 1150ms both;
+  gap: 32px;
+  padding: 24px;
+  text-align: center;
+  animation: startup-dissolve 600ms var(--ease-exit) 2800ms both;
+}
+
+.startup.is-leaving {
+  animation: startup-dissolve 320ms var(--ease-exit) both;
+}
+
+/* The app's aurora, glowing up slowly behind the mark. */
+.startup-glow {
+  position: absolute;
+  inset: -25%;
+  z-index: -1;
+  background:
+    radial-gradient(30% 36% at 26% 22%, rgba(236, 170, 160, 0.7), transparent 70%),
+    radial-gradient(50% 56% at 32% 30%, rgba(90, 50, 170, 0.6), transparent 74%),
+    radial-gradient(34% 40% at 78% 80%, rgba(170, 120, 245, 0.7), transparent 72%);
+  animation:
+    startup-glow-in 1400ms var(--ease-settle) both,
+    aurora-a 26s ease-in-out infinite alternate;
+}
+
+.startup-wordmark .logo-seam {
+  animation-duration: 1500ms;
+  animation-delay: 450ms;
+}
+
+.startup-wordmark .logo-letters {
+  animation-duration: 1500ms;
+  animation-delay: 450ms;
+}
+
+.startup-tag {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.startup-line {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(17px, 2vw, 23px);
+  color: #ece6f2;
+  animation: startup-rise 900ms var(--ease-settle) 1600ms both;
+}
+
+.startup-iris {
+  animation: startup-rise 900ms var(--ease-settle) 1900ms both;
 }
 
 .startup-skip {
@@ -1811,13 +1838,21 @@ legend {
   border: 1px solid rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.04);
   color: #ece6f2;
+  animation: startup-rise 600ms var(--ease-settle) 600ms both;
 }
 
-.startup-line {
-  font-family: var(--font-display);
-  font-size: clamp(18px, 2vw, 24px);
-  color: #ece6f2;
-  animation: rise 1100ms var(--ease-settle) both;
+@keyframes startup-glow-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes startup-rise {
+  from { opacity: 0; transform: translateY(14px); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes startup-dissolve {
+  to { opacity: 0; transform: scale(1.04); filter: blur(6px); visibility: hidden; }
 }
 
 /* ===================== Home ===================== */
