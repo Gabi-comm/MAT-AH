@@ -9,7 +9,7 @@ import {
   type SearchResult,
   type Status,
 } from './api'
-import { Highlight, Rail, ResultRow, StatusStrip, Viewer, fmtBytes, kindLabel, relFolder, where, type ViewTarget } from './bits'
+import { ConsentModal, Highlight, Rail, ResultRow, StatusStrip, Viewer, fmtBytes, kindLabel, relFolder, where, type ViewTarget } from './bits'
 
 type Mode = 'hanap' | 'sagot' | 'linis' | 'kilos'
 
@@ -46,6 +46,7 @@ export default function App() {
   const q = queries[mode]
   const setQ = (v: string) => setQueries((all) => ({ ...all, [mode]: v }))
   const [roots, setRoots] = useState<Root[]>([])
+  const [rootsLoaded, setRootsLoaded] = useState(false)
   const [status, setStatus] = useState<Status | null>(null)
   const [progress, setProgress] = useState<IndexProgress | null>(null)
   const [view, setView] = useState<ViewTarget | null>(null)
@@ -59,7 +60,10 @@ export default function App() {
 
   const refresh = useCallback(async () => {
     const [r, s, p] = await Promise.allSettled([api.roots(), api.status(), api.indexStatus()])
-    if (r.status === 'fulfilled') setRoots(r.value)
+    if (r.status === 'fulfilled') {
+      setRoots(r.value)
+      setRootsLoaded(true)
+    }
     if (s.status === 'fulfilled') setStatus(s.value)
     if (p.status === 'fulfilled') setProgress(p.value)
   }, [])
@@ -135,7 +139,6 @@ export default function App() {
         {err && <p className="error banner">{err}</p>}
 
         <section className="results" aria-live="polite">
-          {roots.length === 0 && <Empty />}
           {mode === 'hanap' && search && <HanapView res={search} roots={roots} onView={setView} />}
           {mode === 'sagot' && answer && <SagotView a={answer} roots={roots} onView={setView} />}
           {mode === 'linis' && linis && (
@@ -159,6 +162,7 @@ export default function App() {
       </main>
 
       {view && <Viewer target={view} roots={roots} onClose={() => setView(null)} />}
+      {rootsLoaded && roots.length === 0 && <ConsentModal onAllowed={refresh} />}
     </div>
   )
 }
@@ -167,18 +171,6 @@ function resolveFolder(text: string, roots: Root[]) {
   if (/^[a-z]:\\/i.test(text)) return text
   // a folder name inside the first root that has it
   return roots.length ? `${roots[0].path}\\${text}` : text
-}
-
-function Empty() {
-  return (
-    <div className="empty">
-      <h2>Start by choosing what MAT-AH may read</h2>
-      <p>
-        Press <b>Add folder</b> and pick a folder like Documents or Downloads. MAT-AH reads the files inside — PDFs, Word, slides, notes
-        and the words in your screenshots — and keeps the index on this laptop.
-      </p>
-    </div>
-  )
 }
 
 /* ---------------- Hanap ---------------- */

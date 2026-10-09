@@ -116,21 +116,6 @@ export function Rail({
   status: Status | null
   onChange: () => void
 }) {
-  const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState<string | null>(null)
-  const add = async () => {
-    setBusy(true)
-    setErr(null)
-    try {
-      const r = await api.addRoot()
-      if (!('cancelled' in r)) await api.reindex()
-      onChange()
-    } catch (e) {
-      setErr((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
-  }
   const running = progress?.running
   const pct = progress && progress.total ? Math.round((progress.done / progress.total) * 100) : 0
   const phaseText: Record<string, string> = {
@@ -139,19 +124,6 @@ export function Rail({
     seeing: `Looking at pictures and videos (${progress?.done}/${progress?.total})`,
     embedding: `Learning meaning (${progress?.done}/${progress?.total})`,
     describing: `Describing pictures (${progress?.done}/${progress?.total})`,
-  }
-  const whole = async () => {
-    setBusy(true)
-    setErr(null)
-    try {
-      await api.addComputer()
-      await api.reindex()
-      onChange()
-    } catch (e) {
-      setErr((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
   }
   const counts = status?.files ?? {}
   return (
@@ -167,8 +139,7 @@ export function Rail({
       </div>
 
       <section>
-        <h2>Folders MAT-AH can read</h2>
-        {roots.length === 0 && <p className="hint">Nothing yet. Add a folder to start; MAT-AH reads only what you pick.</p>}
+        <h2>What MAT-AH reads</h2>
         <ul className="roots">
           {roots.map((r) => (
             <li key={r.id} title={r.path}>
@@ -188,13 +159,7 @@ export function Rail({
             </li>
           ))}
         </ul>
-        <button className="btn wide" onClick={whole} disabled={busy}>
-          Search my whole computer
-        </button>
         <div className="rail-actions">
-          <button className="btn ghost" onClick={add} disabled={busy}>
-            {busy ? 'Choose in the dialog…' : 'Add folder'}
-          </button>
           <button
             className="btn ghost"
             disabled={running || roots.length === 0}
@@ -203,10 +168,9 @@ export function Rail({
               onChange()
             }}
           >
-            Re-index
+            Check for new files
           </button>
         </div>
-        {err && <p className="error">{err}</p>}
         {running && (
           <div className="progress" aria-label="Indexing progress">
             <div style={{ transform: `scaleX(${progress!.phase === 'listing' ? 0.05 : pct / 100})` }} />
@@ -238,6 +202,52 @@ export function Rail({
       )}
       <p className="privacy">Everything stays on this laptop. The server listens on 127.0.0.1 only.</p>
     </aside>
+  )
+}
+
+/* ---------- first run: ask before reading anything ---------- */
+
+export function ConsentModal({ onAllowed }: { onAllowed: () => void }) {
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const btn = useRef<HTMLButtonElement>(null)
+  useEffect(() => btn.current?.focus(), [])
+  const allow = async () => {
+    setBusy(true)
+    setErr(null)
+    try {
+      await api.addComputer()
+      await api.reindex()
+      onAllowed()
+    } catch (e) {
+      setErr((e as Error).message)
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="scrim">
+      <div className="consent" role="dialog" aria-modal="true" aria-labelledby="consent-title">
+        <span className="logo big" aria-hidden>
+          <span />
+        </span>
+        <h2 id="consent-title">I'll read your files so you can find them later</h2>
+        <p>
+          MAT-AH will go through the files in your user folder: documents, PDFs, slides, spreadsheets, the words in your
+          screenshots and photos, and what is seen and said in your videos. Then you can ask for any of them in your own
+          words, in English, Filipino or Taglish.
+        </p>
+        <ul>
+          <li>Everything stays on this laptop. Nothing is uploaded, and it works with Wi-Fi off.</li>
+          <li>It skips system folders, app data and code dependencies.</li>
+          <li>It only reads. Nothing is moved or deleted unless you say yes in Kilos.</li>
+          <li>You can pause reading at any time.</li>
+        </ul>
+        {err && <p className="error">{err}</p>}
+        <button ref={btn} className="btn allow" onClick={allow} disabled={busy}>
+          {busy ? 'Starting…' : 'Ok, I allow'}
+        </button>
+      </div>
+    </div>
   )
 }
 

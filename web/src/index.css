@@ -1114,3 +1114,60 @@ input[type='checkbox'] {
   border-radius: var(--radius-s);
   background: #000;
 }
+
+/* ---------- first-run consent ---------- */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: color-mix(in srgb, var(--ink) 45%, transparent);
+}
+.consent {
+  background: var(--sheet);
+  border-radius: 14px;
+  padding: 32px 34px 28px;
+  max-width: 560px;
+  width: 100%;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+  animation: rise 0.25s ease-out;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.logo.big {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 18px;
+}
+.logo.big span {
+  width: 30px;
+  height: 10px;
+}
+.consent h2 {
+  font-size: 26px;
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+.consent p {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+.consent ul {
+  margin: 0 0 22px;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  font-size: 15px;
+}
+.btn.allow {
+  width: 100%;
+  font-size: 19px;
+  padding: 14px;
+  border-radius: var(--radius-m);
+}

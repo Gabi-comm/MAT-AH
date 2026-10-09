@@ -374,8 +374,9 @@ def backfill_visual(con) -> None:
     if not visual.installed():
         return
     progress.update(phase="seeing", current="loading the visual model…", total=0, done=0)
-    if not visual.wait_ready(timeout=3600):
-        return
+    while not visual.wait_ready(timeout=2):  # first run downloads the model; pausing still works
+        if progress["stop"] or visual.status()["error"]:
+            return
     rows = con.execute("""SELECT f.id, f.path, f.kind FROM files f WHERE f.status='ok' AND f.kind IN ('image','video')
                           AND NOT EXISTS (SELECT 1 FROM visual v WHERE v.file_id=f.id) ORDER BY f.mtime DESC""").fetchall()
     progress.update(phase="seeing", total=len(rows), done=0)
