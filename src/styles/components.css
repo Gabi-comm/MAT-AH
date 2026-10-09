@@ -12,11 +12,14 @@
 }
 
 @media (min-width: 900px) {
+  #root:has(> .shell) {
+    padding: 10px;
+  }
+
   .shell {
     flex-wrap: nowrap;
-    height: calc(100vh - 20px);
+    height: 100%;
     min-height: 0;
-    margin: 10px;
     border-radius: var(--r-panel);
     border: 1px solid var(--glass-edge);
     overflow: hidden;
