@@ -34,6 +34,7 @@ async def lifespan(app: FastAPI):
     VISUAL.load(con)
     con.close()
     threading.Thread(target=llm.warm, daemon=True).start()
+    visual.ready()  # start loading CLIP in the background
     yield
 
 

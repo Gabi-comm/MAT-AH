@@ -32,7 +32,10 @@ SKIP_DIRS = {
     ".remember", ".claude", "OneDriveTemp",
 }
 DATA_DIR = DB_PATH.parent.resolve()
+REPO_DEMO = (Path(__file__).resolve().parent.parent / "demo_data").resolve()  # MAT-AH's own test fixtures
+NEVER = {DATA_DIR, REPO_DEMO}
 READ_ORDER = {"pdf": 0, "docx": 0, "pptx": 0, "sheet": 0, "text": 1, "image": 2, "audio": 3, "video": 4}
+EMBED_NOW_MAX = 150  # chunks; larger files get meaning vectors in the later embedding phase
 CAPTION_LIMIT = int(os.environ.get("MATAH_CAPTION_LIMIT", "150"))  # per indexing run; 0 disables
 
 progress = {"running": False, "phase": "idle", "listed": 0, "total": 0, "done": 0, "current": "",
@@ -50,7 +53,7 @@ def _skip_dir(entry: os.DirEntry) -> bool:
     if entry.name in SKIP_DIRS or entry.name.startswith("."):
         return True
     try:
-        if Path(entry.path).resolve() == DATA_DIR:
+        if Path(entry.path).resolve() in NEVER:
             return True
     except OSError:
         return True
@@ -215,6 +218,8 @@ def read_file(con, fid: int, embed: bool | None = None) -> bool:
             units += media.transcribe(p)
         elif kind == "audio":
             units = media.transcribe(p)
+        elif kind == "image" and in_bulk(p):  # dataset image: it gets seen (CLIP), not read (OCR)
+            units = []
         else:
             kind, units, taken = extract(p)
         status = "ok"
@@ -240,7 +245,7 @@ def read_file(con, fid: int, embed: bool | None = None) -> bool:
             con.execute("ROLLBACK")
             _err(f"{p.name}: {e}")
             return False
-    if embed:
+    if embed and len(items) <= EMBED_NOW_MAX:  # big books wait for the embedding phase; words work already
         try:
             embed_chunks(con, items, name_words(p))
         except Exception as e:
@@ -262,33 +267,64 @@ def ensure_listed(con, path: str) -> int | None:
         return upsert_listing(con, r["id"], p, st.st_size, st.st_mtime, None)
 
 
-_prio: "queue.Queue[int]" = queue.Queue()
+_prio: "queue.Queue[tuple[str, int]]" = queue.Queue()
 _prio_thread: list[threading.Thread] = []
 
 
-def prioritize(fids: list[int]) -> None:
+def prioritize(con, fids: list[int]) -> None:
     """Read these files next, on a side worker, so a search result fills in with its content."""
+    db_file = con.execute("PRAGMA database_list").fetchone()[2]
     if not _prio_thread:
         def worker():
             from .index import connect
-            con = connect()
+            cons = {}
             while True:
-                fid = _prio.get()
+                path, fid = _prio.get()
                 try:
-                    read_file(con, fid)
+                    c = cons.get(path) or cons.setdefault(path, connect(Path(path)))
+                    read_file(c, fid)
                 except Exception as e:
                     _err(f"priority read {fid}: {e}")
         t = threading.Thread(target=worker, daemon=True, name="matah-priority-reader")
         t.start()
         _prio_thread.append(t)
     for f in fids:
-        _prio.put(f)
+        _prio.put((db_file, f))
+
+
+DATASET_NAMES = {"images", "labels", "train", "valid", "val", "test", "all", "dataset", "data", "frames"}
+BULK: set[str] = set()  # folders that are collections (datasets, exports), not personal files
+
+
+def find_bulk_folders(con) -> set[str]:
+    """Folders with hundreds of same-type files are datasets or exports (e.g. 9,000 training images).
+    Their text files stay name-only and their images get visual vectors only (no OCR), read last."""
+    counts: dict[tuple[str, str], int] = {}
+    for path, kind in con.execute("SELECT path, kind FROM files WHERE kind IN ('image','text')"):
+        key = (os.path.dirname(path), kind)
+        counts[key] = counts.get(key, 0) + 1
+    bulk = set()
+    for (folder, _), n in counts.items():
+        if n >= 300 or (n >= 100 and os.path.basename(folder).lower() in DATASET_NAMES):
+            bulk.add(folder.lower())
+    return bulk
+
+
+def in_bulk(path) -> bool:
+    return os.path.dirname(str(path)).lower() in BULK
 
 
 def read_queue(con) -> None:
+    BULK.clear()
+    BULK.update(find_bulk_folders(con))
+    queued_text = [r[0] for r in con.execute("SELECT id, path FROM files WHERE status='queued' AND kind='text'")
+                   if in_bulk(r[1])]
+    with _write_lock:
+        con.executemany("UPDATE files SET status='meta' WHERE id=?", [(i,) for i in queued_text])
     order = " ".join(f"WHEN '{k}' THEN {v}" for k, v in READ_ORDER.items())
-    ids = [r[0] for r in con.execute(
-        f"SELECT id FROM files WHERE status='queued' ORDER BY CASE kind {order} ELSE 9 END, mtime DESC")]
+    rows = con.execute(f"SELECT id, path, kind FROM files WHERE status='queued' "
+                       f"ORDER BY CASE kind {order} ELSE 9 END, mtime DESC").fetchall()
+    ids = [r[0] for r in rows if not in_bulk(r[1])] + [r[0] for r in rows if in_bulk(r[1])]
     progress.update(phase="reading", total=len(ids), done=0)
     embed = llm.embed_available()
     progress["embed_skipped"] = not embed
@@ -335,7 +371,10 @@ def backfill_embeddings(con) -> None:
 
 def backfill_visual(con) -> None:
     """CLIP vectors for images/videos read before the visual model was available."""
-    if not visual.ready():
+    if not visual.installed():
+        return
+    progress.update(phase="seeing", current="loading the visual model…", total=0, done=0)
+    if not visual.wait_ready(timeout=3600):
         return
     rows = con.execute("""SELECT f.id, f.path, f.kind FROM files f WHERE f.status='ok' AND f.kind IN ('image','video')
                           AND NOT EXISTS (SELECT 1 FROM visual v WHERE v.file_id=f.id) ORDER BY f.mtime DESC""").fetchall()

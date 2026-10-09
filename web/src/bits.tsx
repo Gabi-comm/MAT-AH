@@ -8,7 +8,10 @@ const KIND_LABEL: Record<string, string> = {
   docx: 'Word',
   pptx: 'Slides',
   text: 'Text',
+  sheet: 'Excel',
   image: 'Image',
+  video: 'Video',
+  audio: 'Audio',
   other: 'File',
 }
 export const kindLabel = (k: string) => KIND_LABEL[k] ?? k
@@ -33,9 +36,13 @@ export function relFolder(path: string, roots: Root[]) {
   return [root.name, ...rest]
 }
 
+export const clock = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`
+
 export function where(loc: Locator) {
   if (loc.page) return `page ${loc.page}`
   if (loc.slide) return `slide ${loc.slide}`
+  if (loc.sheet) return `sheet ${loc.sheet}`
+  if (typeof loc.t === 'number') return `at ${clock(loc.t)}`
   return null
 }
 
@@ -126,6 +133,26 @@ export function Rail({
   }
   const running = progress?.running
   const pct = progress && progress.total ? Math.round((progress.done / progress.total) * 100) : 0
+  const phaseText: Record<string, string> = {
+    listing: `Listing files… ${progress?.listed.toLocaleString() ?? 0} found`,
+    reading: `Reading ${progress?.current || '…'} (${progress?.done.toLocaleString()}/${progress?.total.toLocaleString()})`,
+    seeing: `Looking at pictures and videos (${progress?.done}/${progress?.total})`,
+    embedding: `Learning meaning (${progress?.done}/${progress?.total})`,
+    describing: `Describing pictures (${progress?.done}/${progress?.total})`,
+  }
+  const whole = async () => {
+    setBusy(true)
+    setErr(null)
+    try {
+      await api.addComputer()
+      await api.reindex()
+      onChange()
+    } catch (e) {
+      setErr((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
   const counts = status?.files ?? {}
   return (
     <aside className="rail">
@@ -161,8 +188,11 @@ export function Rail({
             </li>
           ))}
         </ul>
+        <button className="btn wide" onClick={whole} disabled={busy}>
+          Search my whole computer
+        </button>
         <div className="rail-actions">
-          <button className="btn" onClick={add} disabled={busy}>
+          <button className="btn ghost" onClick={add} disabled={busy}>
             {busy ? 'Choose in the dialog…' : 'Add folder'}
           </button>
           <button
@@ -179,11 +209,14 @@ export function Rail({
         {err && <p className="error">{err}</p>}
         {running && (
           <div className="progress" aria-label="Indexing progress">
-            <div style={{ transform: `scaleX(${pct / 100})` }} />
-            <small>
-              Reading {progress!.current || '…'} ({progress!.done}/{progress!.total})
-            </small>
+            <div style={{ transform: `scaleX(${progress!.phase === 'listing' ? 0.05 : pct / 100})` }} />
+            <small>{phaseText[progress!.phase] ?? 'Working…'}</small>
           </div>
+        )}
+        {running && (
+          <button className="btn small ghost stop" onClick={() => api.stopIndex().then(onChange)}>
+            Pause indexing
+          </button>
         )}
         {!running && progress?.embed_skipped && progress.finished > 0 && (
           <p className="hint">Indexed for keywords only — start Ollama and re-index to add meaning search.</p>
@@ -242,11 +275,11 @@ export function ResultRow({ hit, roots, onView, rank }: { hit: Hit; roots: Root[
   const f = hit.file
   const crumbs = relFolder(f.path, roots)
   const page = hit.locator.page ?? 1
-  const hasThumb = f.kind === 'image' || f.kind === 'pdf'
+  const hasThumb = f.kind === 'image' || f.kind === 'pdf' || f.kind === 'video'
   return (
     <li className="row" style={{ animationDelay: `${Math.min(rank, 8) * 25}ms` }}>
       <button className="thumb" onClick={() => onView(hit)} aria-label={`View ${f.name}`}>
-        {hasThumb ? <img src={thumbUrl(f.id, page)} alt="" loading="lazy" /> : <span className={`ext k-${f.kind}`}>{f.ext.replace('.', '')}</span>}
+        {hasThumb ? <img src={thumbUrl(f.id, page, hit.locator.t ?? 1)} alt="" loading="lazy" /> : <span className={`ext k-${f.kind}`}>{f.ext.replace('.', '')}</span>}
       </button>
       <div className="body">
         <div className="title">
@@ -321,9 +354,13 @@ export function Viewer({ target, roots, onClose }: { target: ViewTarget; roots: 
       {meta && <Notes fileId={f.id} notes={meta.notes} onSaved={setMeta} />}
       <div className="stage">
         {err && <p className="error">{err}</p>}
+        {f.kind === 'video' && (
+          <video key={`${f.id}-${target.locator.t}`} controls autoPlay muted src={`${rawUrl(f.id)}#t=${target.locator.t ?? 0}`} />
+        )}
+        {f.kind === 'audio' && <audio controls autoPlay src={`${rawUrl(f.id)}#t=${target.locator.t ?? 0}`} />}
         {f.kind === 'pdf' && <iframe key={`${f.id}-${page}`} title={f.name} src={`${rawUrl(f.id)}#page=${page ?? 1}&view=FitH&navpanes=0`} />}
         {f.kind === 'image' && meta && <OcrImage id={f.id} loc={meta.locator} needles={target.highlight} />}
-        {f.kind !== 'pdf' && f.kind !== 'image' && meta && (
+        {!['pdf', 'image', 'video', 'audio'].includes(f.kind) && meta && (
           <pre className="textview">
             {where(target.locator) && <span className="loc">{where(target.locator)}</span>}
             <Highlight text={meta.text} needles={target.highlight} />

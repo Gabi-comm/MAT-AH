@@ -21,10 +21,13 @@ def demo(tmp_path_factory):
     subprocess.run([sys.executable, str(ROOT / "scripts" / "make_demo_data.py"), "--out", str(out)], check=True)
     manifest = json.loads((ROOT / "demo_data" / "manifest.json").read_text(encoding="utf-8"))
     os.environ["MATAH_DB"] = str(base / "test.db")
-    from backend import folders, llm, scan
+    from backend import folders, llm, scan, visual, winsearch
     from backend.index import connect
     llm.embed_available = lambda: False  # keyword path only: deterministic and offline
     llm.available = lambda: False
+    llm.vision_model = lambda: None
+    visual.ready = lambda: False
+    winsearch.available = lambda: False
     con = connect(base / "test.db")
     folders.add_root(con, str(out))
     scan.run(con)

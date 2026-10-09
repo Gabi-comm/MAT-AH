@@ -16,6 +16,8 @@ KINDS = {
 MAX_BYTES = {"pdf": 150 << 20, "docx": 60 << 20, "pptx": 200 << 20, "sheet": 30 << 20, "text": 5 << 20,
              "image": 40 << 20, "video": 8 << 30, "audio": 1 << 30}
 MIN_IMAGE_BYTES = 12 << 10  # smaller images are icons and UI assets, not photos or screenshots
+PDF_MAX_PAGES = 500
+PDF_MAX_OCR_PAGES = 30  # scanned pages OCR'd per PDF
 
 _ocr = None
 _ocr_lock = threading.Lock()
@@ -57,11 +59,14 @@ def ocr_image(img) -> tuple[str, list[dict]]:
 def extract_pdf(path: Path) -> list[dict]:
     import numpy as np
     import pymupdf
-    units = []
+    units, ocr_budget = [], PDF_MAX_OCR_PAGES
     with pymupdf.open(path) as doc:
         for i, page in enumerate(doc, start=1):
+            if i > PDF_MAX_PAGES:  # a whole textbook is still findable by its first 500 pages and its name
+                break
             text = page.get_text().strip()
-            if len(text) < 20:  # scanned page: render and OCR
+            if len(text) < 20 and ocr_budget > 0:  # scanned page: render and OCR
+                ocr_budget -= 1
                 pix = page.get_pixmap(dpi=144)
                 arr = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
                 if pix.n == 4:

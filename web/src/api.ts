@@ -1,4 +1,4 @@
-export type Kind = 'pdf' | 'docx' | 'pptx' | 'text' | 'image' | 'other'
+export type Kind = 'pdf' | 'docx' | 'pptx' | 'sheet' | 'text' | 'image' | 'video' | 'audio' | 'other'
 
 export interface FileRef {
   id: number
@@ -9,11 +9,17 @@ export interface FileRef {
   size: number
   mtime: number
   taken_at: string | null
+  status?: string
 }
 
 export interface Locator {
   page?: number
   slide?: number
+  sheet?: string
+  t?: number
+  end?: number
+  visual?: number
+  caption?: boolean
   chars?: [number, number]
   size?: [number, number]
   boxes?: { text: string; box: [number, number, number, number] }[]
@@ -79,6 +85,10 @@ export interface Root {
 
 export interface IndexProgress {
   running: boolean
+  phase: 'idle' | 'listing' | 'reading' | 'seeing' | 'embedding' | 'describing' | 'done'
+  listed: number
+  seen: number
+  described: number
   total: number
   done: number
   current: string
@@ -167,6 +177,8 @@ const post = <T,>(path: string, body?: unknown) =>
 export const api = {
   roots: () => call<Root[]>('/api/roots'),
   addRoot: () => post<Root | { cancelled: true }>('/api/roots', {}),
+  addComputer: () => post<{ added: Root[] }>('/api/roots/computer'),
+  stopIndex: () => post<IndexProgress>('/api/index/stop'),
   removeRoot: (id: number) => call(`/api/roots/${id}`, { method: 'DELETE' }),
   reindex: () => post<IndexProgress>('/api/index'),
   indexStatus: () => call<IndexProgress>('/api/index/status'),
@@ -190,4 +202,4 @@ export const api = {
 }
 
 export const rawUrl = (id: number) => `/api/files/${id}/raw`
-export const thumbUrl = (id: number, page = 1) => `/api/files/${id}/thumb?page=${page}`
+export const thumbUrl = (id: number, page = 1, t = 1) => `/api/files/${id}/thumb?page=${page}&t=${t}`

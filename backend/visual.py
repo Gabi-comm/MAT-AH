@@ -43,8 +43,27 @@ def _load():
             return False
 
 
+_loader: list[threading.Thread] = []
+
+
 def ready() -> bool:
-    return installed() and _load()
+    """Non-blocking: starts loading (first run downloads the weights) and says whether it's usable yet."""
+    if _m["model"] is not None:
+        return True
+    if _m["error"] or not installed():
+        return False
+    if not _loader:
+        t = threading.Thread(target=_load, daemon=True, name="matah-clip-loader")
+        t.start()
+        _loader.append(t)
+    return False
+
+
+def wait_ready(timeout: float | None = None) -> bool:
+    ready()
+    if _loader:
+        _loader[0].join(timeout)
+    return _m["model"] is not None
 
 
 def status() -> dict:

@@ -1099,3 +1099,18 @@ input[type='checkbox'] {
   font-weight: 700;
   padding: 6px 0;
 }
+
+/* ---------- whole computer + media ---------- */
+.btn.wide {
+  width: 100%;
+  margin-bottom: 8px;
+}
+.btn.stop {
+  margin-top: 28px;
+}
+.stage video,
+.stage audio {
+  width: 100%;
+  border-radius: var(--radius-s);
+  background: #000;
+}

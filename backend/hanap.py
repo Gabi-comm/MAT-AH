@@ -321,7 +321,7 @@ def search(con, q: str, limit: int = 20, mode: str = "hybrid", use_llm: bool = T
     queued = [h["file"]["id"] for h in filtered[:10] if h["file"]["status"] == "queued"]
     if queued:
         from .scan import prioritize
-        prioritize(queued)  # read these next, so the following search shows what's inside them
+        prioritize(con, queued)  # read these next, so the following search shows what's inside them
     return {"query": p, "hits": filtered[:limit], "timings": timings, "relaxed": relaxed,
             "mode": "hybrid" if len(lists) > 1 else "keyword", "sources": sorted(lists),
             "llm_model": llm.chat_model() if p["llm"] else None}
