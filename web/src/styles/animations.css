@@ -1,0 +1,316 @@
+/*
+  MAT-AH motion system. Only transform and opacity (plus clip-path for the
+  signature seam reveal) are animated. See web/README.md "Motion spec".
+
+  Motion level is set on <html data-motion="full|subtle|none">.
+  "none" removes decorative motion; state changes still show instantly.
+*/
+
+/* ---------- Shared keyframes ---------- */
+
+@keyframes seam-reveal {
+  from { clip-path: inset(50% 0 50% 0 round 14px); }
+  /* Ends slightly outside the box so focus rings and recognition brackets are not clipped. */
+  to { clip-path: inset(-24px -24px -24px -24px round 14px); }
+}
+
+@keyframes seam-scan {
+  0% { transform: scaleX(0.15); opacity: 0.6; }
+  50% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(0.15); opacity: 0.6; }
+}
+
+@keyframes brackets-in {
+  from { transform: scale(1.15); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(340%); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dialog-open {
+  from { opacity: 0; clip-path: inset(46% 0 46% 0 round 20px); }
+  to { opacity: 1; clip-path: inset(0 0 0 0 round 20px); }
+}
+
+@keyframes drawer-in {
+  from { transform: translateX(32px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes toast-in {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes bubble-in {
+  from { transform: translateY(6px) scale(0.92); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes draw {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes rise {
+  0%, 55% { transform: translateY(10px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes gather {
+  from { transform: translateX(-36px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes startup-out {
+  to { opacity: 0; visibility: hidden; }
+}
+
+/* ---------- Applied reveals ---------- */
+
+.reveal {
+  animation: seam-reveal var(--t-reveal) var(--ease-aperture) both;
+}
+
+.reveal-stagger > * {
+  animation: seam-reveal var(--t-reveal) var(--ease-aperture) both;
+}
+
+.reveal-stagger > *:nth-child(2) { animation-delay: calc(var(--stagger) * 1); }
+.reveal-stagger > *:nth-child(3) { animation-delay: calc(var(--stagger) * 2); }
+.reveal-stagger > *:nth-child(4) { animation-delay: calc(var(--stagger) * 3); }
+.reveal-stagger > *:nth-child(5) { animation-delay: calc(var(--stagger) * 4); }
+.reveal-stagger > *:nth-child(n + 6) { animation-delay: calc(var(--stagger) * 5); }
+
+.brackets {
+  animation: brackets-in var(--t-recognize) var(--ease-settle) 200ms both;
+}
+
+.ghost-item {
+  animation: gather var(--t-gather) var(--ease-settle) both;
+}
+
+/* ---------- Logo reveal (hyphen opens, letters unmask) ---------- */
+
+@keyframes logo-seam {
+  0% { transform: scaleX(0.06) scaleY(0.6); }
+  35% { transform: scaleX(1) scaleY(0.6); }
+  60% { transform: scaleX(1) scaleY(1.35); }
+  100% { transform: scaleX(1) scaleY(1); }
+}
+
+@keyframes logo-letters {
+  0%, 40% { clip-path: inset(50% 0 50% 0); opacity: 0; }
+  100% { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+
+.logo-animate .logo-seam {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: logo-seam 1000ms var(--ease-aperture) both;
+}
+
+.logo-animate .logo-letters {
+  animation: logo-letters 1000ms var(--ease-aperture) both;
+}
+
+/* ---------- Iris ---------- */
+
+.iris {
+  display: inline-block;
+  overflow: visible;
+  flex: none;
+}
+
+.iris .iris-wrap,
+.iris .iris-body {
+  transform-box: view-box;
+  transform-origin: 28px 56px;
+}
+
+.iris .iris-face {
+  transform-box: view-box;
+  transform-origin: 28px 29px;
+}
+
+/* Idle A: breathing (3.2 s, about 2% scale). */
+@keyframes iris-breathe {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.02, 0.985); }
+}
+
+/* Idle B: blink, once per 5.6 s cycle. Face group squashes vertically. */
+@keyframes iris-blink {
+  0%, 93%, 100% { transform: scaleY(1); }
+  95.5% { transform: scaleY(0.12); }
+}
+
+/* Idle C: curious tilt (applied briefly by the idle scheduler). */
+@keyframes iris-tilt {
+  0% { transform: rotate(0deg); }
+  30%, 70% { transform: rotate(-8deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* Idle D: tiny wiggle (rare). */
+@keyframes iris-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-4deg); }
+  40% { transform: rotate(4deg); }
+  60% { transform: rotate(-2deg); }
+  80% { transform: rotate(2deg); }
+}
+
+/* Hand-drawn boil: three stepped frames, the puzzle-game art style. */
+@keyframes iris-boil {
+  0% { transform: rotate(-1.2deg) scale(1, 1); }
+  33% { transform: rotate(0.8deg) scale(1.015, 0.985); }
+  66% { transform: rotate(0deg) scale(0.985, 1.015); }
+  100% { transform: rotate(-1.2deg) scale(1, 1); }
+}
+
+@keyframes iris-squish {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.05, 0.92); }
+}
+
+@keyframes iris-scan {
+  0%, 100% { transform: translateX(-2.5px); }
+  50% { transform: translateX(2.5px); }
+}
+
+@keyframes iris-hop {
+  0% { transform: translateY(0) scale(1, 1); }
+  18% { transform: translateY(0) scale(1.1, 0.86); }
+  48% { transform: translateY(-13px) scale(0.94, 1.08); }
+  78% { transform: translateY(0) scale(1.06, 0.94); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+
+@keyframes iris-pause {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-2px); }
+}
+
+@keyframes iris-lean {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  50% { transform: translateX(3px) rotate(5deg); }
+}
+
+@keyframes iris-dots {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+@keyframes iris-ring {
+  0% { transform: scale(0.6); opacity: 0; }
+  40% { opacity: 1; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+
+@keyframes iris-doc {
+  0% { transform: translate(0, 6px) scale(0.3); opacity: 0; }
+  45% { transform: translate(0, -4px) scale(1.1); opacity: 1; }
+  100% { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+
+@keyframes iris-shapes {
+  0% { transform: translate(var(--fx, -10px), 4px); opacity: 0; }
+  60% { opacity: 1; }
+  100% { transform: translate(0, 0); opacity: 1; }
+}
+
+.iris .iris-dot1 { animation: iris-dots 1100ms ease-in-out infinite; }
+.iris .iris-dot2 { animation: iris-dots 1100ms ease-in-out 160ms infinite; }
+.iris .iris-dot3 { animation: iris-dots 1100ms ease-in-out 320ms infinite; }
+
+.iris .iris-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: iris-ring 700ms var(--ease-aperture) both;
+}
+
+.iris .iris-docmark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: iris-doc 420ms var(--ease-settle) 140ms both;
+}
+
+.iris .iris-shape {
+  transform-box: fill-box;
+  animation: iris-shapes 600ms var(--ease-settle) both;
+}
+
+.iris .iris-shape:nth-of-type(2) { --fx: 10px; animation-delay: 120ms; }
+.iris .iris-shape:nth-of-type(3) { --fx: -6px; animation-delay: 240ms; }
+
+/* State to animation mapping (full motion). */
+.iris[data-state="idle"] .iris-body { animation: iris-breathe 3200ms ease-in-out infinite; }
+.iris[data-state="idle"] .iris-face { animation: iris-blink 5600ms ease-in-out infinite; }
+.iris[data-state="idle"][data-boil="true"] .iris-wrap { animation: iris-boil 600ms steps(1) infinite; }
+.iris[data-idle-act="tilt"] .iris-wrap { animation: iris-tilt 1400ms var(--ease-settle) both; }
+.iris[data-idle-act="wiggle"] .iris-wrap { animation: iris-wiggle 700ms ease-in-out both; }
+.iris[data-state="resting"] .iris-body { animation: iris-breathe 5200ms ease-in-out infinite; }
+.iris[data-state="curious"] .iris-wrap { animation: iris-tilt 1400ms var(--ease-settle) both; }
+.iris[data-state="searching"] .iris-body { animation: iris-squish 700ms ease-in-out infinite; }
+.iris[data-state="searching"] .iris-eyes { transform-box: fill-box; animation: iris-scan 900ms ease-in-out infinite; }
+.iris[data-state="found"] .iris-wrap { animation: iris-pause 160ms var(--ease-settle) both; }
+.iris[data-state="celebrating"] .iris-wrap { animation: iris-hop 520ms var(--ease-settle) 2; }
+.iris[data-state="thinking"] .iris-body { animation: iris-breathe 2400ms ease-in-out infinite; }
+.iris[data-state="planning"] .iris-body { animation: iris-breathe 2400ms ease-in-out infinite; }
+.iris[data-state="waiting-for-approval"] .iris-wrap { animation: iris-lean 1600ms ease-in-out 2; }
+.iris[data-state="success"] .iris-wrap { animation: iris-hop 520ms var(--ease-settle) 1; }
+.iris[data-state="no-results"] .iris-wrap { animation: iris-tilt 1600ms var(--ease-settle) both; }
+.iris[data-state="error"] .iris-body { animation: iris-breathe 4000ms ease-in-out infinite; }
+
+/* Subtle motion: keep breathing and the one-time reactions, drop loops and the boil. */
+:root[data-motion="subtle"] .iris .iris-wrap { animation-iteration-count: 1 !important; }
+:root[data-motion="subtle"] .iris[data-boil="true"] .iris-wrap { animation: none; }
+:root[data-motion="subtle"] .iris[data-state="celebrating"] .iris-wrap { animation: iris-pause 200ms var(--ease-settle) both; }
+:root[data-motion="subtle"] .iris[data-state="searching"] .iris-body { animation: none; }
+:root[data-motion="subtle"] .iris-shape,
+:root[data-motion="subtle"] .iris-ring { animation-duration: 1ms; }
+
+/* No decorative motion: everything settles to its final frame. */
+:root[data-motion="none"] *,
+:root[data-motion="none"] *::before,
+:root[data-motion="none"] *::after {
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  animation-delay: 0ms !important;
+  transition-duration: 1ms !important;
+}
+
+:root[data-motion="none"] .skeleton,
+:root[data-motion="none"] .progress.indeterminate > span,
+:root[data-motion="none"] .seam-field.is-busy .seam-line {
+  animation: none !important;
+}
+
+:root[data-motion="none"] .progress.indeterminate > span {
+  width: 100%;
+  opacity: 0.45;
+}
+
+:root[data-motion="none"] .startup {
+  display: none;
+}
+
+/* Pause everything decorative while the window is hidden. */
+:root.is-hidden .iris *,
+:root.is-hidden .skeleton {
+  animation-play-state: paused !important;
+}

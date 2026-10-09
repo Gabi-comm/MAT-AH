@@ -4,6 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
+// Kept from the team's original web/ setup.
 export default tseslint.config(
   { ignores: ['dist'] },
   {
