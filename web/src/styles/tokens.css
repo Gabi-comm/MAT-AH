@@ -1,31 +1,34 @@
 /*
-  MAT-AH design tokens, taken from the approved Claude Design boards
-  ("03 Color and Typography: Iris Bloom" and the D01 to D10 desktop screens).
-  Contrast ratios are noted next to text pairs (WCAG 2.2 AA needs 4.5:1).
+  MAT-AH design tokens: "Obsidian Iris".
+  Near-black canvas with a deep plum glow, violet accents and glass
+  surfaces over a reeded-glass texture. Contrast ratios are noted next to
+  text pairs (WCAG 2.2 AA needs 4.5:1).
 
-  Theme is set by data-theme="light" | "dark" on <html> (see theme/theme.ts).
+  Theme is set by data-theme="light" | "dark" on <html>.
 */
 
 :root {
-  /* Raw palette: Iris Bloom */
-  --c-pupil: #0e0a18;
-  --c-night: #1a1430;
-  --c-night-2: #261e44;
-  --c-porcelain: #f6f3ef;
-  --c-sheet: #fffdfb;
-  --c-ink: #17121f;
-  --c-ink-2: #463f55;
-  --c-ink-3: #6a6378;
-  --c-line: #e4ded8;
-  --c-line-2: #cfc6cf;
-  --c-violet: #5b3fd6;
-  --c-violet-deep: #3f2aa6;
-  --c-lavender: #c8bcff;
-  --c-lav-soft: #ece7ff;
+  /* Raw palette */
+  --c-void: #050407;
+  --c-pupil: #0b0910;
+  --c-night: #141019;
+  --c-night-2: #1d1724;
+  --c-plum: #2a1433;
+  --c-plum-2: #3d1d4a;
+  --c-porcelain: #f4f0f7;
+  --c-sheet: #fbf9fd;
+  --c-ink: #16111c;
+  --c-ink-2: #463e52;
+  --c-ink-3: #675e73;
+  --c-violet: #7c3aed;
+  --c-violet-deep: #5b21b6;
+  --c-violet-glow: #a855f7;
+  --c-lavender: #cdb4ff;
+  --c-lav-soft: #efe7ff;
+  --c-orchid: #e879f9;
   --c-ember: #f28a4e;
   --c-ember-deep: #a2420f;
-  --c-ember-soft: #fde3d2;
-  --c-mist: #b3a9c9;
+  --c-mist: #a99fb5;
   --c-local: #7ee0a8;
 
   /* Typography */
@@ -33,14 +36,14 @@
   --font-ui: "Geist", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-mono: "Geist Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
 
-  --fs-hero: clamp(34px, 3.6vw, 52px);
-  --fs-display: 32px;
-  --fs-title: 20px;
-  --fs-body: 16px;
-  --fs-ui: 15px;
-  --fs-small: 14px;
-  --fs-caption: 13px;
-  --fs-meta: 12.5px;
+  --fs-hero: clamp(30px, 3.2vw, 44px);
+  --fs-display: 30px;
+  --fs-title: 19px;
+  --fs-body: 15px;
+  --fs-ui: 14.5px;
+  --fs-small: 13.5px;
+  --fs-caption: 12.5px;
+  --fs-meta: 12px;
 
   /* Spacing (4-based) */
   --sp-1: 4px;
@@ -54,14 +57,14 @@
   --sp-14: 56px;
 
   /* Radius */
-  --r-chip: 6px;
-  --r-control: 10px;
-  --r-field: 14px;
-  --r-card: 14px;
-  --r-panel: 20px;
+  --r-chip: 8px;
+  --r-control: 12px;
+  --r-field: 999px;
+  --r-card: 18px;
+  --r-panel: 24px;
   --r-pill: 999px;
 
-  /* Motion (06 Motion Storyboard and Spec) */
+  /* Motion */
   --t-hover: 140ms;
   --t-focus: 180ms;
   --t-state: 220ms;
@@ -71,112 +74,128 @@
   --ease-aperture: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-settle: cubic-bezier(0.3, 0, 0.1, 1);
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --stagger: 40ms;
 
   /* Layout */
-  --rail-w: 232px;
+  --rail-w: 236px;
   --content-max: 1080px;
+
+  /* The rail is dark in both themes. */
+  --rail-bg: var(--c-void);
+  --rail-surface: rgba(255, 255, 255, 0.05);
+  --rail-active: rgba(255, 255, 255, 0.08);
+  --rail-border: rgba(255, 255, 255, 0.07);
+  --rail-text: #ece6f2;
+  --rail-muted: #8f86a0; /* 5.6:1 on rail */
+  --local-dot: var(--c-local);
 }
 
-/* ---------- Light theme (default workspace: "porcelain field") ---------- */
+/* ---------- Dark theme (default look) ---------- */
 :root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: var(--c-void);
+  --canvas: var(--c-pupil);
+  --glow-1: rgba(110, 36, 130, 0.55);
+  --glow-2: rgba(124, 58, 237, 0.18);
+  --texture-line: rgba(255, 255, 255, 0.035);
+  --texture-band: rgba(255, 255, 255, 0.025);
+
+  --surface: rgba(22, 18, 28, 0.72);
+  --surface-elevated: #17131d;
+  --surface-sunken: rgba(255, 255, 255, 0.045);
+  --glass-hi: rgba(255, 255, 255, 0.06);
+  --glass-lo: rgba(255, 255, 255, 0.015);
+  --glass-edge: rgba(255, 255, 255, 0.09);
+  --glass-shine: rgba(255, 255, 255, 0.07);
+
+  --text-primary: #f4f0f7; /* 17:1 on canvas */
+  --text-secondary: #b4abc0; /* 9.1:1 */
+  --text-tertiary: #8d849a; /* 5.4:1 */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-input: rgba(255, 255, 255, 0.18);
+
+  --accent-primary: var(--c-violet); /* fills; white text 5.7:1 */
+  --accent-primary-hover: #8b4cf7;
+  --on-accent-primary: #ffffff;
+  --accent-primary-soft: rgba(124, 58, 237, 0.2);
+  --accent-primary-text: var(--c-lavender); /* 10:1 on canvas */
+  --accent-glow: rgba(168, 85, 247, 0.45);
+
+  --accent-secondary: var(--c-orchid);
+  --accent-secondary-soft: rgba(232, 121, 249, 0.13);
+  --accent-secondary-text: #f0abfc; /* 10:1 */
+  --on-accent-secondary: var(--c-pupil);
+
+  --focus-ring: rgba(168, 85, 247, 0.45);
+  --focus-outline: #e9ddff;
+
+  --success: #5fcb8c;
+  --success-soft: rgba(95, 203, 140, 0.12);
+  --success-text: #8fe0b0;
+  --warning: #f6a877;
+  --warning-soft: rgba(246, 168, 119, 0.12);
+  --error: #ff8a80;
+  --error-soft: rgba(255, 138, 128, 0.12);
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --shadow-3: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --scrim: rgba(3, 2, 6, 0.65);
+}
+
+/* ---------- Light theme ("lilac glass") ---------- */
 :root[data-theme="light"] {
   color-scheme: light;
-  --background: var(--c-porcelain);
-  --surface: var(--c-sheet);
+  --background: #1a1220;
+  --canvas: #f1ecf5;
+  --glow-1: rgba(196, 160, 214, 0.75);
+  --glow-2: rgba(124, 58, 237, 0.12);
+  --texture-line: rgba(40, 20, 60, 0.045);
+  --texture-band: rgba(255, 255, 255, 0.35);
+
+  --surface: rgba(255, 255, 255, 0.66);
   --surface-elevated: #ffffff;
-  --surface-sunken: #efeae4;
-  --text-primary: var(--c-ink); /* 16.6:1 on background */
-  --text-secondary: var(--c-ink-2); /* 9.0:1 */
-  --text-tertiary: var(--c-ink-3); /* 5.2:1 */
-  --border: var(--c-line);
-  --border-strong: var(--c-line-2);
-  --border-input: var(--c-ink);
+  --surface-sunken: rgba(40, 20, 60, 0.05);
+  --glass-hi: rgba(255, 255, 255, 0.85);
+  --glass-lo: rgba(255, 255, 255, 0.55);
+  --glass-edge: rgba(40, 20, 60, 0.1);
+  --glass-shine: rgba(255, 255, 255, 0.9);
 
-  --accent-primary: var(--c-violet); /* decisions, approvals, links */
+  --text-primary: var(--c-ink); /* 16:1 */
+  --text-secondary: var(--c-ink-2); /* 9:1 */
+  --text-tertiary: var(--c-ink-3); /* 5.3:1 */
+  --border: rgba(40, 20, 60, 0.1);
+  --border-strong: rgba(40, 20, 60, 0.2);
+  --border-input: rgba(40, 20, 60, 0.28);
+
+  --accent-primary: var(--c-violet);
   --accent-primary-hover: var(--c-violet-deep);
-  --on-accent-primary: #ffffff; /* 6.7:1 */
+  --on-accent-primary: #ffffff;
   --accent-primary-soft: var(--c-lav-soft);
-  --accent-primary-text: var(--c-violet-deep); /* 8.3:1 on soft */
+  --accent-primary-text: var(--c-violet-deep); /* 8:1 on soft */
+  --accent-glow: rgba(124, 58, 237, 0.28);
 
-  --accent-secondary: var(--c-ember); /* the seam, "found", evidence */
-  --accent-secondary-soft: var(--c-ember-soft);
-  --accent-secondary-text: var(--c-ember-deep); /* 5.7:1 */
-  --on-accent-secondary: var(--c-pupil); /* 7.9:1 */
+  --accent-secondary: #c026d3;
+  --accent-secondary-soft: #fae8ff;
+  --accent-secondary-text: #86198f; /* 8:1 */
+  --on-accent-secondary: #ffffff;
 
-  --focus-ring: var(--c-lavender);
+  --focus-ring: rgba(124, 58, 237, 0.3);
   --focus-outline: var(--c-ink);
 
   --success: #23784a;
   --success-soft: #e3f1e8;
   --success-text: #1b5e39;
   --warning: var(--c-ember-deep);
-  --warning-soft: var(--c-ember-soft);
+  --warning-soft: #fde3d2;
   --error: #b42318;
   --error-soft: #fbe6e3;
 
-  --rail-bg: var(--c-pupil);
-  --rail-surface: var(--c-night);
-  --rail-active: var(--c-night-2);
-  --rail-text: #e6e0f0;
-  --rail-muted: #9a91b2; /* 6.7:1 on rail */
-  --local-dot: var(--c-local);
-
   --shadow-1: 0 1px 2px rgba(23, 18, 31, 0.08);
-  --shadow-2: 0 8px 24px rgba(23, 18, 31, 0.1);
-  --shadow-3: 0 18px 48px rgba(23, 18, 31, 0.18);
+  --shadow-2: 0 10px 28px rgba(60, 30, 80, 0.12);
+  --shadow-3: 0 24px 56px rgba(60, 30, 80, 0.2);
   --scrim: rgba(14, 10, 24, 0.45);
-
-  --iris-ground: transparent;
-}
-
-/* ---------- Dark theme ("pupil field"): designed, not inverted ---------- */
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --background: #120e20;
-  --surface: var(--c-night);
-  --surface-elevated: var(--c-night-2);
-  --surface-sunken: #0f0b1b;
-  --text-primary: var(--c-porcelain); /* 16.0:1 on surface */
-  --text-secondary: var(--c-mist); /* 8.0:1 */
-  --text-tertiary: #9a91b2; /* 6.0:1 */
-  --border: #33294f;
-  --border-strong: #463c66;
-  --border-input: #b3a9c9;
-
-  --accent-primary: #9c8cff;
-  --accent-primary-hover: #b6aaff;
-  --on-accent-primary: var(--c-pupil); /* 7.1:1 */
-  --accent-primary-soft: #2a2150;
-  --accent-primary-text: var(--c-lavender); /* 8.5:1 on soft */
-
-  --accent-secondary: var(--c-ember);
-  --accent-secondary-soft: #3a2418;
-  --accent-secondary-text: #f6a877; /* 7.5:1 on soft, 9.1:1 on surface */
-  --on-accent-secondary: var(--c-pupil);
-
-  --focus-ring: #5b3fd6;
-  --focus-outline: var(--c-porcelain);
-
-  --success: #5fcb8c;
-  --success-soft: #16301f;
-  --success-text: #8fe0b0;
-  --warning: #f6a877;
-  --warning-soft: #3a2418;
-  --error: #ff8a80;
-  --error-soft: #3a1714;
-
-  --rail-bg: #0a0712;
-  --rail-surface: #17112b;
-  --rail-active: var(--c-night-2);
-  --rail-text: #e6e0f0;
-  --rail-muted: #9a91b2;
-  --local-dot: var(--c-local);
-
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.5);
-  --scrim: rgba(5, 3, 10, 0.6);
-
-  --iris-ground: transparent;
 }

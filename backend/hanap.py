@@ -2,6 +2,7 @@
 import json
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor
 import unicodedata
 from datetime import datetime, timedelta
 
@@ -229,24 +230,30 @@ def _file_ranking(con, chunk_ids: list[int]) -> list[tuple[int, int]]:
     return out
 
 
-def _visual_ranking(con, text: str, min_z: float, k: int = 80) -> list[tuple[int, None, dict]]:
-    """CLIP text->image: [(file_id, None, {"t": best frame time, "visual": score})], best frame per file."""
-    if not len(VISUAL) or not visual.ready():
-        return []
-    qv = visual.embed_text([text])[0]
-    vis = VISUAL.search(qv, k, min_z=min_z)
+_POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix="matah-source")
+SOURCE_TIMEOUT_S = 6.0
+
+
+def _timed(fn):
+    t = time.perf_counter()
+    out = fn()
+    return out, round((time.perf_counter() - t) * 1000, 1)
+
+
+def _visual_hits(con, vis: list[tuple[int, float]]) -> list[tuple[int, None, dict]]:
+    """Visual ids -> [(file_id, None, {"t": best frame time, "visual": score})], best frame per file."""
     if not vis:
         return []
     q = ",".join("?" * len(vis))
     rows = {r[0]: (r[1], r[2]) for r in con.execute(f"SELECT id, file_id, t FROM visual WHERE id IN ({q})",
                                                     [v[0] for v in vis])}
     seen, out = set(), []
-    for vid, s in vis:
+    for vid, sc in vis:
         fid, t = rows.get(vid, (None, None))
         if fid is None or fid in seen:
             continue
         seen.add(fid)
-        loc = {"visual": round(s, 3)}
+        loc = {"visual": round(sc, 3)}
         if t is not None:
             loc["t"] = t
         out.append((fid, None, loc))
@@ -255,33 +262,45 @@ def _visual_ranking(con, text: str, min_z: float, k: int = 80) -> list[tuple[int
 
 def search(con, q: str, limit: int = 20, mode: str = "hybrid", use_llm: bool = True) -> dict:
     """mode 'hybrid' fuses every source; 'keyword' is FTS only (the eval baseline)."""
+    from .scan import note_query
+    note_query()  # background indexing pauses while someone is searching
     timings: dict[str, float] = {}
     t0 = time.perf_counter()
     p = parse(q, use_llm=use_llm)
     timings["parse"] = round((time.perf_counter() - t0) * 1000, 1)
     t1 = time.perf_counter()
-    lists: dict[str, list] = {"keyword": [(f, c, {}) for f, c in _file_ranking(con, _fts(con, fts_query(p)))]}
     wants_visual = any(k in p["kinds"] for k in ("image", "video"))
-    if mode == "hybrid":
+    futures = {}
+    if mode == "hybrid":  # the slow sources run side by side; SQLite work stays on this thread
         if len(VECTORS) and llm.embed_available():
-            try:
-                qv = llm.embed([q if len(q) < 300 else " ".join(p["terms"])], "query")[0]
-                ids = [cid for cid, s in VECTORS.search(qv, 60) if s > 0.2]
-                lists["meaning"] = [(f, c, {}) for f, c in _file_ranking(con, ids)]
-            except Exception:
-                pass
-        try:
+            text = q if len(q) < 300 else " ".join(p["terms"])
+            futures["meaning"] = _POOL.submit(_timed, lambda: VECTORS.search(llm.embed([text], "query")[0], 60))
+        if len(VISUAL) and visual.ready():
             clip_text = " ".join(p["terms"] + p["phrases"]) or q
-            lists["visual"] = _visual_ranking(con, clip_text,
-                                              VIS_Z_VISUAL_QUERY if wants_visual else VIS_Z_ANY_QUERY)
-        except Exception:
-            pass
+            z = VIS_Z_VISUAL_QUERY if wants_visual else VIS_Z_ANY_QUERY
+            futures["visual"] = _POOL.submit(_timed, lambda: VISUAL.search(visual.embed_text([clip_text])[0], 80, min_z=z))
         if winsearch.available():
-            from .scan import ensure_listed
             terms = p["terms"] + p["phrases"] + [str(int(a)) for a in p["amounts"]]
             scopes = [r[0] for r in con.execute("SELECT path FROM roots")]
+            futures["windows"] = _POOL.submit(_timed, lambda: winsearch.search(terms, scopes, 30))
+    t_kw = time.perf_counter()
+    lists: dict[str, list] = {"keyword": [(f, c, {}) for f, c in _file_ranking(con, _fts(con, fts_query(p)))]}
+    timings["keyword"] = round((time.perf_counter() - t_kw) * 1000, 1)
+    for src, fut in futures.items():
+        try:
+            raw, ms = fut.result(timeout=SOURCE_TIMEOUT_S)
+            timings[src] = ms
+        except Exception:  # a slow or failed source never blocks the others
+            timings[src] = None
+            continue
+        if src == "meaning":
+            lists["meaning"] = [(f, c, {}) for f, c in _file_ranking(con, [cid for cid, sc in raw if sc > 0.2])]
+        elif src == "visual":
+            lists["visual"] = _visual_hits(con, raw)
+        elif src == "windows":
+            from .scan import ensure_listed
             out = []
-            for path, _rank in winsearch.search(terms, scopes, 30):
+            for path, _rank in raw:
                 try:
                     fid = ensure_listed(con, path)
                 except Exception:
@@ -371,6 +390,10 @@ def _build_hits(con, score, why, best, p) -> list[dict]:
             c = con.execute("SELECT id, text, locator FROM chunks WHERE id=?", (cid,)).fetchone()
         else:  # found by sight or by the Windows index: show its first chunk
             c = con.execute("SELECT id, text, locator FROM chunks WHERE file_id=? ORDER BY id LIMIT 1", (fid,)).fetchone()
+        name = fold(f["name"])
+        words = [t for t in p["terms"] if len(t) >= 3]
+        if words and all(t in name for t in words):  # "resume" -> Resume - SOLOMON.pdf
+            s *= 1.3
         if p["amounts"] and c:  # exact amounts are strong evidence for receipts
             norm = re.sub(r"[,\s.]", "", c["text"])
             if any(str(int(v)) in norm for v in p["amounts"]):

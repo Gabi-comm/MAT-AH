@@ -58,7 +58,7 @@ export function KilosPage({ q }: { q: string }) {
   };
 
   return (
-    <AppShell page="kilos" title="Kilos" eyebrow="Organize · nothing moves without your OK">
+    <AppShell page="kilos" title="Kilos">
       <form className={`seam-field${propose.status === "loading" ? " is-busy" : ""}`} onSubmit={submit} aria-busy={propose.status === "loading"}>
         <Icon name="organize" size={20} />
         <label htmlFor="kilos-q" className="sr-only">

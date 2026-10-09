@@ -74,7 +74,7 @@ export function SagotPage({ q, navigate }: { q: string; navigate: (p: Page, para
     setPreview({ fileId: s.file.id, name: s.file.name, chunkId: s.chunk_id, locator: s.locator, highlight: s.highlight, excerpt: s.snippet });
 
   return (
-    <AppShell page="sagot" title="Sagot" eyebrow="Answers from your files, with sources">
+    <AppShell page="sagot" title="Sagot">
       <div className="split">
         <section className="primary stack gap-5" aria-label="Question and answer">
           <form className={`seam-field${loading ? " is-busy" : ""}`} onSubmit={submit} aria-busy={loading}>
@@ -187,7 +187,6 @@ export function SagotPage({ q, navigate }: { q: string; navigate: (p: Page, para
         <aside className="aside stack gap-3" aria-label="Evidence">
           <div className="row" style={{ justifyContent: "space-between" }}>
             <span className="eyebrow">{d?.status === "grounded" ? "Evidence" : "Closest sources"} {shown.length ? `· ${shown.length}` : ""}</span>
-            {d?.status === "grounded" && <span className="subtle" style={{ fontSize: 13 }}>Select a citation to spotlight it</span>}
           </div>
           {loading && (
             <>

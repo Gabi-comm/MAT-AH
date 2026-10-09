@@ -67,7 +67,7 @@ const OUTCOME: Record<Outcome, IrisState> = {
 
 /** States that return to idle by themselves, and after how long (ms). */
 export const SETTLE_AFTER: Partial<Record<IrisState, number>> = {
-  celebrating: 1040,
+  celebrating: 1800,
   "no-results": 2600,
   success: 1600,
   error: 6000,

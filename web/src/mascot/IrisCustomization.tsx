@@ -11,7 +11,14 @@ import { ACCESSORY_LABELS, EXPRESSION_LABELS, IRIS_PRESETS } from "./irisPresets
 import type { IrisAccessory, IrisExpression, IrisState } from "./iris.types";
 
 type Draft = Preferences["iris"];
-type PreviewKey = "idle" | "found" | "thinking";
+type PreviewKey = "idle" | "searching" | "found" | "thinking";
+
+const PREVIEWS: { id: PreviewKey; label: string }[] = [
+  { id: "idle", label: "Idle" },
+  { id: "searching", label: "Searching" },
+  { id: "found", label: "Found" },
+  { id: "thinking", label: "Thinking" },
+];
 
 export default function IrisCustomization({ onDone }: { onDone?: () => void }) {
   const { prefs, update, resolvedTheme, motion } = usePrefs();
@@ -28,7 +35,10 @@ export default function IrisCustomization({ onDone }: { onDone?: () => void }) {
     if (k === "found") {
       setPreview("found");
       if (motion !== "none") timers.current.push(window.setTimeout(() => setPreview("celebrating"), 160));
-      timers.current.push(window.setTimeout(() => setPreview("idle"), 1250));
+      timers.current.push(window.setTimeout(() => setPreview("idle"), 2000));
+    } else if (k === "searching") {
+      setPreview("searching");
+      timers.current.push(window.setTimeout(() => setPreview("idle"), 4000));
     } else if (k === "thinking") {
       setPreview("thinking");
       timers.current.push(window.setTimeout(() => setPreview("idle"), 3000));
@@ -36,33 +46,38 @@ export default function IrisCustomization({ onDone }: { onDone?: () => void }) {
   }
 
   const set = (c: Partial<Draft>) => setDraft((d) => ({ ...d, ...c }));
-  const irisProps = { preset: draft.preset, accessory: draft.accessory, expression: draft.expression, state: preview, boil: motion === "full" } as const;
+  const active = (k: PreviewKey) => (k === "found" ? preview === "found" || preview === "celebrating" : preview === k);
+  const name = IRIS_PRESETS.find((p) => p.id === draft.preset)?.name;
 
   return (
     <section className="stack gap-5" aria-label="Customize Iris">
-      <div className="grid-auto-wide" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))" }}>
-        <div className="preview-box" aria-label="Preview on light">
-          <div className="preview-floor" aria-hidden="true" />
-          <Iris {...irisProps} size={120} theme="light" label={`Iris preview, ${IRIS_PRESETS.find((p) => p.id === draft.preset)?.name}, light theme`} />
-        </div>
-        <div className="preview-box on-dark" aria-label="Preview on dark">
-          <div className="preview-floor" style={{ borderColor: "#463c66" }} aria-hidden="true" />
-          <Iris {...irisProps} size={120} theme="dark" />
-        </div>
+      <div className="preview-box">
+        <div className="preview-floor" aria-hidden="true" />
+        <Iris
+          preset={draft.preset}
+          accessory={draft.accessory}
+          expression={draft.expression}
+          state={preview}
+          boil={motion === "full"}
+          size={110}
+          theme="dark"
+          label={`Iris preview, ${name}`}
+        />
       </div>
       <div className="row wrap gap-2" role="group" aria-label="Preview animation">
-        <span className="subtle" style={{ fontSize: 13 }}>Preview:</span>
-        <button className="chip chip-sm" aria-pressed={preview === "idle"} onClick={() => play("idle")}>Idle</button>
-        <button className="chip chip-sm" aria-pressed={preview === "found" || preview === "celebrating"} onClick={() => play("found")}>Ah, kita ko na!</button>
-        <button className="chip chip-sm" aria-pressed={preview === "thinking"} onClick={() => play("thinking")}>Thinking</button>
+        {PREVIEWS.map((p) => (
+          <button key={p.id} className="chip chip-sm" aria-pressed={active(p.id)} onClick={() => play(p.id)}>
+            {p.label}
+          </button>
+        ))}
       </div>
 
       <fieldset className="stack gap-3">
-        <legend className="card-title" style={{ marginBottom: 10 }}>Kulay · colour</legend>
+        <legend className="card-title" style={{ marginBottom: 10 }}>Colour</legend>
         <div className="swatches" role="radiogroup" aria-label="Iris colour">
           {IRIS_PRESETS.map((p) => (
             <button key={p.id} className="swatch" role="radio" aria-checked={draft.preset === p.id} onClick={() => set({ preset: p.id })}>
-              <Iris preset={p.id} size={40} theme={resolvedTheme} state="idle" />
+              <Iris preset={p.id} size={38} theme={resolvedTheme} state="idle" />
               {p.name}
             </button>
           ))}
@@ -74,7 +89,7 @@ export default function IrisCustomization({ onDone }: { onDone?: () => void }) {
         <div className="swatches" role="radiogroup" aria-label="Iris accessory">
           {(Object.keys(ACCESSORY_LABELS) as IrisAccessory[]).map((a) => (
             <button key={a} className="swatch" role="radio" aria-checked={draft.accessory === a} onClick={() => set({ accessory: a })}>
-              <Iris preset={draft.preset} accessory={a} size={40} theme={resolvedTheme} state="idle" />
+              <Iris preset={draft.preset} accessory={a} size={38} theme={resolvedTheme} state="idle" />
               {ACCESSORY_LABELS[a]}
             </button>
           ))}
@@ -82,16 +97,15 @@ export default function IrisCustomization({ onDone }: { onDone?: () => void }) {
       </fieldset>
 
       <fieldset className="stack gap-3">
-        <legend className="card-title" style={{ marginBottom: 10 }}>Expression when idle</legend>
+        <legend className="card-title" style={{ marginBottom: 10 }}>Idle expression</legend>
         <div className="swatches" role="radiogroup" aria-label="Iris expression">
           {(Object.keys(EXPRESSION_LABELS) as IrisExpression[]).map((x) => (
             <button key={x} className="swatch" role="radio" aria-checked={draft.expression === x} onClick={() => set({ expression: x })}>
-              <Iris preset={draft.preset} accessory={draft.accessory} expression={x} size={40} theme={resolvedTheme} state="idle" />
+              <Iris preset={draft.preset} accessory={draft.accessory} expression={x} size={38} theme={resolvedTheme} state="idle" />
               {EXPRESSION_LABELS[x]}
             </button>
           ))}
         </div>
-        <p className="subtle" style={{ fontSize: 13 }}>Expressions change how Iris looks at rest. Her reactions to searches stay the same.</p>
       </fieldset>
 
       <div className="row wrap gap-3">
@@ -103,12 +117,10 @@ export default function IrisCustomization({ onDone }: { onDone?: () => void }) {
         </button>
         {dirty && (
           <button className="btn btn-ghost" onClick={() => setDraft(prefs.iris)}>
-            Discard changes
+            Discard
           </button>
         )}
-        <span className="subtle" role="status" style={{ fontSize: 13 }}>
-          {dirty ? "Unsaved changes" : "Saved on this computer"}
-        </span>
+        {dirty && <span className="subtle" role="status" style={{ fontSize: 13 }}>Unsaved changes</span>}
       </div>
     </section>
   );

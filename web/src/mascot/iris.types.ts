@@ -16,7 +16,7 @@ export type IrisState =
 
 export type IrisPresetId = "classic" | "ube" | "mint" | "midnight" | "peach" | "sunshine" | "rose";
 
-export type IrisAccessory = "none" | "glasses" | "headphones" | "gradcap" | "beanie" | "bowtie" | "headband";
+export type IrisAccessory = "none" | "glasses" | "headphones" | "gradcap" | "beanie" | "bowtie" | "headband" | "detective";
 
 export type IrisExpression = "classic" | "cheerful" | "curious" | "calm";
 

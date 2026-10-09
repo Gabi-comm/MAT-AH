@@ -102,7 +102,7 @@ export function LinisPage() {
   );
 
   return (
-    <AppShell page="linis" title="Linis" eyebrow="Clean up · review first, nothing is deleted outright">
+    <AppShell page="linis" title="Linis">
       <form className={`seam-field${scan.status === "loading" ? " is-busy" : ""}`} onSubmit={(e) => { e.preventDefault(); rescan(); }} aria-busy={scan.status === "loading"}>
         <Icon name="folder" size={20} />
         <label htmlFor="linis-folder" className="sr-only">Folder to check</label>
@@ -198,7 +198,6 @@ export function LinisPage() {
                   ))}
               </div>
 
-              <Notice tone="info">Look-alike photo detection is not part of this version. Only byte-for-byte duplicates are listed, so the copy you keep is identical.</Notice>
               {err && <Notice tone="err">{err}</Notice>}
 
               <div className="approval">

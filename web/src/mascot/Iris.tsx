@@ -1,10 +1,11 @@
 /*
   Iris, the MAT-AH mascot (board 05). A small paper sprite: a file with a
   folded-corner "ear", two dot eyes and stubby feet, drawn flat in the
-  chunky puzzle-game style. Pure presentation: no timers, no network.
+  chunky puzzle-game style. Pure presentation: no network. The only timer
+  re-pops the search drawer at a random spot while she is searching.
   Motion comes from CSS keyed on data-state (styles/animations.css).
 */
-import { memo, type ReactElement } from "react";
+import { memo, useEffect, useId, useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
 import type { IrisAccessory, IrisExpression, IrisPresetId, IrisState } from "./iris.types";
 import { paletteFor, type IrisPaletteWithOutline } from "./irisPresets";
 
@@ -24,8 +25,8 @@ export interface IrisProps {
   className?: string;
 }
 
-const BODY = "M8 50C4 50 4 46 4 40V20C4 10 10 6 20 6H38L52 18V40C52 48 50 50 44 50Z";
-const FOLD = "M38 6V15C38 17 39 18 41 18H52Z";
+export const BODY = "M8 50C4 50 4 46 4 40V20C4 10 10 6 20 6H38L52 18V40C52 48 50 50 44 50Z";
+export const FOLD = "M38 6V15C38 17 39 18 41 18H52Z";
 
 function dots(c: string, x1: number, x2: number, y: number, r: number) {
   return (
@@ -49,7 +50,7 @@ const RELAXED = "M18 29q4 3 8 0M30 29q4 3 8 0";
 const CLOSED = "M18 29.5h8M30 29.5h8";
 const SMILE = "M24 36q4 4 8 0";
 
-function face(state: IrisState, expression: IrisExpression, p: IrisPaletteWithOutline): ReactElement {
+export function face(state: IrisState, expression: IrisExpression, p: IrisPaletteWithOutline): ReactElement {
   const c = p.face;
   switch (state) {
     case "searching":
@@ -128,7 +129,7 @@ function face(state: IrisState, expression: IrisExpression, p: IrisPaletteWithOu
   }
 }
 
-function accessory(a: IrisAccessory, p: IrisPaletteWithOutline, hat: string): ReactElement | null {
+export function accessory(a: IrisAccessory, p: IrisPaletteWithOutline, hat: string): ReactElement | null {
   const ink = p.accent;
   switch (a) {
     case "glasses":
@@ -178,10 +179,155 @@ function accessory(a: IrisAccessory, p: IrisPaletteWithOutline, hat: string): Re
           <path d="M10 13l-5 -6l8 2Z M10 13l-6 4l7 -1Z" fill={hat} />
         </g>
       );
+    case "detective":
+      return (
+        <g>
+          <path d="M9 10C9 -5 47 -5 47 10Z" fill="#C9A27A" />
+          <path d="M9 10C11 2 18 -2 26 -3C20 0 15 4 14 10Z" fill="#E0BE96" />
+          <rect x="9" y="5" width="38" height="4.5" rx="1.2" fill="#3B2A4D" />
+          <path d="M1 10.5H55Q51 15 45 13.5H11Q5 15 1 10.5Z" fill="#8A6442" />
+          <circle cx="28" cy="-3.2" r="1.8" fill="#8A6442" />
+        </g>
+      );
     case "none":
     default:
       return null;
   }
+}
+
+/** Hat colour that contrasts with the body: violet on warm bodies, ember on cool ones. */
+export function hatFor(preset: IrisPresetId, theme: "light" | "dark"): string {
+  const warm = preset === "classic" || preset === "peach" || preset === "sunshine" || preset === "rose";
+  return warm ? (theme === "dark" ? "#9C8CFF" : "#5B3FD6") : "#F28A4E";
+}
+
+type Outline = { stroke?: string; strokeWidth?: number; strokeLinejoin?: "round" };
+
+function outlineFor(p: IrisPaletteWithOutline): Outline {
+  return p.outline ? { stroke: p.outline, strokeWidth: 1.5, strokeLinejoin: "round" } : {};
+}
+
+/** Feet, body, folded ear and face. Shared by the header Iris and the rail scenes. */
+export function IrisSprite({ p, faceEl, dim = false, children }: { p: IrisPaletteWithOutline; faceEl: ReactElement; dim?: boolean; children?: ReactNode }) {
+  const o = outlineFor(p);
+  return (
+    <g className="iris-body" opacity={dim ? 0.6 : 1}>
+      <rect className="iris-foot-l" x="11" y="48" width="8" height="7" rx="2" fill={p.body} {...o} />
+      <rect className="iris-foot-r" x="37" y="48" width="8" height="7" rx="2" fill={p.body} {...o} />
+      <path d={BODY} fill={p.body} {...o} />
+      <path d={FOLD} fill={p.fold} {...o} />
+      <g className="iris-face">{faceEl}</g>
+      {children}
+    </g>
+  );
+}
+
+/** A stubby arm: a rounded stroke in the body colour with a round hand. */
+export function Arm({ d, hand, p, className }: { d: string; hand: [number, number]; p: IrisPaletteWithOutline; className?: string }) {
+  const edge = p.outline ?? "rgba(0,0,0,0.3)";
+  return (
+    <g className={className}>
+      <path d={d} stroke={edge} strokeWidth="5" fill="none" strokeLinecap="round" />
+      <path d={d} stroke={p.body} strokeWidth="3.2" fill="none" strokeLinecap="round" />
+      <circle cx={hand[0]} cy={hand[1]} r="2.9" fill={p.body} stroke={edge} strokeWidth="1" />
+    </g>
+  );
+}
+
+/* ---------- Searching: a drawer pops up in front and she tosses papers in ---------- */
+
+const DRAWER_SPOTS = [-12, -5, 4, 12];
+
+interface DrawerSpot {
+  x: number;
+  n: number;
+  delay: number;
+}
+
+function randomSpot(prev?: DrawerSpot): DrawerSpot {
+  const choices = prev ? DRAWER_SPOTS.filter((x) => x !== prev.x) : DRAWER_SPOTS;
+  return {
+    x: choices[Math.floor(Math.random() * choices.length)],
+    n: (prev?.n ?? 0) + 1,
+    delay: prev ? 0 : Math.round(Math.random() * 350),
+  };
+}
+
+/** Picks a random spot for the drawer, then re-pops it somewhere else every few seconds. */
+function useDrawerSpot(active: boolean): DrawerSpot {
+  const [spot, setSpot] = useState<DrawerSpot>(() => randomSpot());
+  useEffect(() => {
+    if (!active) return;
+    setSpot(randomSpot());
+    let t = 0;
+    const next = () => {
+      t = window.setTimeout(() => {
+        setSpot((s) => randomSpot(s));
+        next();
+      }, 2200 + Math.random() * 1400);
+    };
+    next();
+    return () => window.clearTimeout(t);
+  }, [active]);
+  return spot;
+}
+
+function Paper({ x, y, w = 8, h = 10 }: { x: number; y: number; w?: number; h?: number }) {
+  return (
+    <>
+      <rect x={x} y={y} width={w} height={h} rx="1.2" fill="#FFFDFB" stroke="#2A1F38" strokeWidth="0.8" />
+      <path d={`M${x + 2} ${y + 3}h${w - 4}M${x + 2} ${y + 5.5}h${w - 4}M${x + 2} ${y + 8}h${w - 5}`} stroke="#A855F7" strokeWidth="0.9" strokeLinecap="round" />
+    </>
+  );
+}
+
+function SearchProps({ p, spot }: { p: IrisPaletteWithOutline; spot: DrawerSpot }) {
+  // Papers leave her hand (about 58,15) and land in the open drawer top.
+  const dx = 28 + spot.x - 58;
+  const toss = (i: number) => ({ "--dx": `${dx}px`, "--dy": "22px", animationDelay: `${spot.delay + 220 + i * 360}ms` }) as CSSProperties;
+  return (
+    <g aria-hidden="true">
+      <Arm className="iris-arm-toss" d="M50 31L57 21" hand={[58, 19.5]} p={p} />
+      {[0, 1, 2].map((i) => (
+        <g key={`${spot.n}-${i}`} className="iris-toss" style={toss(i)}>
+          <Paper x={54} y={10} />
+        </g>
+      ))}
+      <g key={spot.n} transform={`translate(${spot.x} 0)`}>
+        <g className="iris-drawer" style={{ animationDelay: `${spot.delay}ms` }}>
+          <rect x="8" y="33" width="40" height="7" rx="1.5" fill="#1B1424" stroke="#CDB4FF" strokeWidth="1" />
+          <path d="M14 35.5h6l2 -3h8l2 3h6" stroke="#FFFDFB" strokeWidth="1.2" fill="none" opacity="0.85" />
+          <rect x="6" y="38" width="44" height="19" rx="3" fill="#3D2A5C" stroke="#CDB4FF" strokeWidth="1.1" />
+          <rect x="10" y="41" width="36" height="13" rx="2" fill="#4B3570" />
+          <rect x="21" y="46" width="14" height="3.4" rx="1.7" fill="#CDB4FF" />
+          <rect x="24" y="42.6" width="8" height="2" rx="0.6" fill="#FFFDFB" opacity="0.8" />
+        </g>
+      </g>
+    </g>
+  );
+}
+
+/* ---------- Found: she lifts a glowing paper and three spark lines burst above it ---------- */
+
+function PrizeProps({ p, gid }: { p: IrisPaletteWithOutline; gid: string }) {
+  return (
+    <g aria-hidden="true">
+      <g className="iris-prize">
+        <circle className="iris-glow" cx="28" cy="-14" r="17" fill={`url(#${gid})`} />
+        <g className="iris-paper-lit">
+          <rect x="19.5" y="-24" width="17" height="21" rx="2" fill="#FFFDFB" stroke="#E9D5FF" strokeWidth="1" />
+          <path d="M23 -18.5h10M23 -14.5h10M23 -10.5h7" stroke="#A855F7" strokeWidth="1.4" strokeLinecap="round" />
+        </g>
+        <g stroke="#F5D0FE" strokeWidth="2" strokeLinecap="round" fill="none">
+          <path className="iris-spark" d="M28 -28V-38" />
+          <path className="iris-spark" d="M21 -26.5L14.5 -33" />
+          <path className="iris-spark" d="M35 -26.5L41.5 -33" />
+        </g>
+      </g>
+      <Arm className="iris-arm-up" d="M8 30Q2 14 19 -4" hand={[20, -5]} p={p} />
+      <Arm className="iris-arm-up" d="M48 30Q54 14 37 -4" hand={[36, -5]} p={p} />
+    </g>
+  );
 }
 
 function IrisImpl({
@@ -197,11 +343,11 @@ function IrisImpl({
   className,
 }: IrisProps) {
   const p = paletteFor(preset, theme);
-  // Hats contrast with the body: violet on warm bodies, ember on cool ones.
-  const warm = preset === "classic" || preset === "peach" || preset === "sunshine" || preset === "rose";
-  const hat = warm ? (theme === "dark" ? "#9C8CFF" : "#5B3FD6") : "#F28A4E";
-  const showReveal = state === "found" || state === "celebrating";
-  const outline = p.outline ? { stroke: p.outline, strokeWidth: 1.5, strokeLinejoin: "round" as const } : {};
+  const hat = hatFor(preset, theme);
+  const reveal = state === "found" || state === "celebrating";
+  const searching = state === "searching";
+  const spot = useDrawerSpot(searching);
+  const gid = `iris-glow-${useId().replace(/:/g, "")}`;
   return (
     <svg
       className={`iris${className ? ` ${className}` : ""}`}
@@ -209,6 +355,7 @@ function IrisImpl({
       height={Math.round((size * 72) / 64)}
       viewBox="-4 -10 64 72"
       data-state={state}
+      data-reveal={reveal ? "true" : undefined}
       data-idle-act={state === "idle" && idleAct ? idleAct : undefined}
       data-boil={state === "idle" && boil && !idleAct ? "true" : undefined}
       role={label ? "img" : undefined}
@@ -216,40 +363,37 @@ function IrisImpl({
       aria-hidden={label ? undefined : true}
       focusable="false"
     >
-      {showReveal && (
-        <g aria-hidden="true">
-          <circle className="iris-ring" cx="28" cy="30" r="30" fill="none" stroke="#F28A4E" strokeWidth="2" />
-          <g className="iris-docmark">
-            <path d="M52 -6h8l4 4v10h-12z" fill="#FFFDFB" stroke="#17121F" strokeWidth="1.4" strokeLinejoin="round" />
-            <path d="M54 2h7M54 5h5" stroke="#F28A4E" strokeWidth="1.6" strokeLinecap="round" />
-          </g>
-          {state === "celebrating" && (
-            <g fill="#F28A4E">
-              <path className="iris-shape" d="M-2 8l2 -3l2 3l-2 3Z" />
-              <path className="iris-shape" d="M58 22l2 -3l2 3l-2 3Z" />
-              <path className="iris-shape" d="M2 -4l1.5 -2.5l1.5 2.5l-1.5 2.5Z" />
-            </g>
-          )}
+      {reveal && (
+        <defs>
+          <radialGradient id={gid}>
+            <stop offset="0%" stopColor="#F5D0FE" stopOpacity="0.95" />
+            <stop offset="45%" stopColor="#C084FC" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#A855F7" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+      )}
+      {state === "celebrating" && (
+        <g fill="#E879F9" aria-hidden="true">
+          <path className="iris-shape" d="M-2 8l2 -3l2 3l-2 3Z" />
+          <path className="iris-shape" d="M58 22l2 -3l2 3l-2 3Z" />
+          <path className="iris-shape" d="M2 -4l1.5 -2.5l1.5 2.5l-1.5 2.5Z" />
         </g>
       )}
       {state === "planning" && (
         <g aria-hidden="true">
-          <rect className="iris-shape" x="56" y="34" width="7" height="9" rx="1.5" fill="#FFFDFB" stroke="#5B3FD6" strokeWidth="1.2" />
-          <rect className="iris-shape" x="58" y="24" width="7" height="9" rx="1.5" fill="#FFFDFB" stroke="#5B3FD6" strokeWidth="1.2" />
-          <rect className="iris-shape" x="54" y="44" width="7" height="9" rx="1.5" fill="#FFFDFB" stroke="#5B3FD6" strokeWidth="1.2" />
+          <rect className="iris-shape" x="56" y="34" width="7" height="9" rx="1.5" fill="#FFFDFB" stroke="#7C3AED" strokeWidth="1.2" />
+          <rect className="iris-shape" x="58" y="24" width="7" height="9" rx="1.5" fill="#FFFDFB" stroke="#7C3AED" strokeWidth="1.2" />
+          <rect className="iris-shape" x="54" y="44" width="7" height="9" rx="1.5" fill="#FFFDFB" stroke="#7C3AED" strokeWidth="1.2" />
         </g>
       )}
       <g className="iris-wrap">
-        <g className="iris-body" opacity={state === "unavailable" ? 0.6 : 1}>
-          <rect x="11" y="48" width="8" height="7" rx="2" fill={p.body} {...outline} />
-          <rect x="37" y="48" width="8" height="7" rx="2" fill={p.body} {...outline} />
-          <path d={BODY} fill={p.body} {...outline} />
-          <path d={FOLD} fill={p.fold} {...outline} />
-          <g className="iris-face">{face(state, expression, p)}</g>
+        <IrisSprite p={p} faceEl={face(state, expression, p)} dim={state === "unavailable"}>
           {state === "error" && <path d="M8 2q-3 5 0 7q3 -2 0 -7Z" fill="#C8BCFF" />}
           {acc !== "none" && <g className="iris-acc">{accessory(acc, p, hat)}</g>}
-        </g>
+        </IrisSprite>
+        {reveal && <PrizeProps p={p} gid={gid} />}
       </g>
+      {searching && <SearchProps p={p} spot={spot} />}
     </svg>
   );
 }

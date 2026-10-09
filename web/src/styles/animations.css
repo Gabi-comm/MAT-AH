@@ -215,18 +215,6 @@
   50% { opacity: 1; }
 }
 
-@keyframes iris-ring {
-  0% { transform: scale(0.6); opacity: 0; }
-  40% { opacity: 1; }
-  100% { transform: scale(1.25); opacity: 0; }
-}
-
-@keyframes iris-doc {
-  0% { transform: translate(0, 6px) scale(0.3); opacity: 0; }
-  45% { transform: translate(0, -4px) scale(1.1); opacity: 1; }
-  100% { transform: translate(0, 0) scale(1); opacity: 1; }
-}
-
 @keyframes iris-shapes {
   0% { transform: translate(var(--fx, -10px), 4px); opacity: 0; }
   60% { opacity: 1; }
@@ -237,18 +225,6 @@
 .iris .iris-dot2 { animation: iris-dots 1100ms ease-in-out 160ms infinite; }
 .iris .iris-dot3 { animation: iris-dots 1100ms ease-in-out 320ms infinite; }
 
-.iris .iris-ring {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: iris-ring 700ms var(--ease-aperture) both;
-}
-
-.iris .iris-docmark {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: iris-doc 420ms var(--ease-settle) 140ms both;
-}
-
 .iris .iris-shape {
   transform-box: fill-box;
   animation: iris-shapes 600ms var(--ease-settle) both;
@@ -256,6 +232,271 @@
 
 .iris .iris-shape:nth-of-type(2) { --fx: 10px; animation-delay: 120ms; }
 .iris .iris-shape:nth-of-type(3) { --fx: -6px; animation-delay: 240ms; }
+
+/* ---------- Searching: a drawer pops up in front, papers get tossed in ---------- */
+
+@keyframes iris-drawer-pop {
+  0% { transform: translateY(16px) scale(0.4, 0.2); opacity: 0; }
+  55% { transform: translateY(-3px) scale(1.06, 1.08); opacity: 1; }
+  75% { transform: translateY(1px) scale(0.98, 0.96); }
+  100% { transform: translateY(0) scale(1, 1); opacity: 1; }
+}
+
+@keyframes iris-drawer-gulp {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.04, 0.95); }
+}
+
+@keyframes iris-toss {
+  0% { transform: translate(0, 0) rotate(0deg) scale(0.7); opacity: 0; }
+  10% { opacity: 1; transform: translate(0, -2px) rotate(-10deg) scale(1); }
+  45% { transform: translate(calc(var(--dx) * 0.45), -14px) rotate(-150deg) scale(1); }
+  82% { transform: translate(var(--dx), var(--dy)) rotate(-300deg) scale(0.8); opacity: 1; }
+  100% { transform: translate(var(--dx), calc(var(--dy) + 5px)) rotate(-320deg) scale(0.6); opacity: 0; }
+}
+
+@keyframes iris-arm-toss {
+  0%, 100% { transform: rotate(18deg); }
+  35% { transform: rotate(-38deg); }
+  55% { transform: rotate(10deg); }
+}
+
+.iris .iris-drawer {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: iris-drawer-pop 420ms var(--ease-spring) both, iris-drawer-gulp 360ms ease-in-out 420ms infinite;
+}
+
+.iris .iris-toss {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: iris-toss 1080ms cubic-bezier(0.3, 0.5, 0.5, 1) infinite;
+}
+
+.iris .iris-arm-toss {
+  transform-box: view-box;
+  transform-origin: 50px 31px;
+  animation: iris-arm-toss 360ms ease-in-out infinite;
+}
+
+/* ---------- Found: grab a glowing paper, lift it, three-line spark ---------- */
+
+@keyframes iris-prize-lift {
+  0% { transform: translateY(26px) scale(0.5); opacity: 0; }
+  35% { transform: translateY(18px) scale(0.75); opacity: 1; }
+  70% { transform: translateY(-3px) scale(1.06); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes iris-arms-up {
+  0% { transform: translateY(20px) scaleY(0.3); opacity: 0; }
+  35% { transform: translateY(14px) scaleY(0.55); opacity: 1; }
+  100% { transform: translateY(0) scaleY(1); opacity: 1; }
+}
+
+@keyframes iris-glow {
+  0%, 100% { transform: scale(0.85); opacity: 0.75; }
+  50% { transform: scale(1.18); opacity: 1; }
+}
+
+@keyframes iris-spark {
+  0% { stroke-dashoffset: 12; opacity: 0; }
+  15% { opacity: 1; }
+  40%, 75% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: -12; opacity: 0; }
+}
+
+.iris .iris-prize {
+  transform-box: view-box;
+  transform-origin: 28px 0px;
+  animation: iris-prize-lift 560ms var(--ease-spring) both;
+}
+
+.iris .iris-arm-up {
+  transform-box: view-box;
+  transform-origin: 28px 30px;
+  animation: iris-arms-up 560ms var(--ease-spring) both;
+}
+
+.iris .iris-paper-lit {
+  filter: drop-shadow(0 0 2px #f5d0fe) drop-shadow(0 0 6px #a855f7);
+}
+
+.iris .iris-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: iris-glow 900ms ease-in-out 400ms infinite;
+}
+
+.iris .iris-spark {
+  stroke-dasharray: 12;
+  stroke-dashoffset: 12;
+  filter: drop-shadow(0 0 2px #e879f9);
+  animation: iris-spark 900ms var(--ease-settle) 380ms infinite both;
+}
+
+.iris .iris-spark:nth-child(2),
+.iris .iris-spark:nth-child(3) {
+  animation-delay: 440ms;
+}
+
+/* ---------- Rail scenes (NavIris) ---------- */
+
+.nav-iris,
+.nav-iris-live {
+  overflow: visible;
+  flex: none;
+}
+
+.nav-iris g {
+  transform-box: view-box;
+}
+
+.nav-iris .iris-face {
+  transform-origin: 28px 29px;
+  animation: iris-blink 5600ms ease-in-out infinite;
+}
+
+@keyframes ns-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.6px); }
+}
+
+@keyframes ns-wave {
+  0%, 100% { transform: rotate(-6deg); }
+  25% { transform: rotate(-34deg); }
+  50% { transform: rotate(4deg); }
+  75% { transform: rotate(-30deg); }
+}
+
+@keyframes ns-lens {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-2px, -4px) rotate(-6deg); }
+  50% { transform: translate(1px, -6px) rotate(4deg); }
+  75% { transform: translate(2px, -1px) rotate(2deg); }
+}
+
+@keyframes ns-scan {
+  0%, 100% { transform: translateX(-1.5px); }
+  50% { transform: translateX(2px); }
+}
+
+@keyframes ns-lean {
+  0%, 100% { transform: rotate(5deg); }
+  50% { transform: rotate(7deg); }
+}
+
+@keyframes ns-pencil {
+  0% { transform: translate(14px, 49px); }
+  28% { transform: translate(44px, 48.5px); }
+  31% { transform: translate(44px, 46px); }
+  33% { transform: translate(12px, 53.5px); }
+  61% { transform: translate(46px, 53px); }
+  64% { transform: translate(46px, 51px); }
+  66% { transform: translate(10px, 58px); }
+  94% { transform: translate(40px, 57.5px); }
+  100% { transform: translate(14px, 49px); }
+}
+
+@keyframes ns-line-1 {
+  0% { stroke-dashoffset: 1; }
+  28%, 94% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 1; }
+}
+
+@keyframes ns-line-2 {
+  0%, 33% { stroke-dashoffset: 1; }
+  61%, 94% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 1; }
+}
+
+@keyframes ns-line-3 {
+  0%, 66% { stroke-dashoffset: 1; }
+  94% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 1; }
+}
+
+@keyframes ns-jog {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes ns-step {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3.5px); }
+}
+
+@keyframes ns-swing {
+  0%, 100% { transform: rotate(-28deg); }
+  50% { transform: rotate(28deg); }
+}
+
+@keyframes ns-belt {
+  to { stroke-dashoffset: 14; }
+}
+
+@keyframes ns-sweat {
+  0%, 40% { transform: translate(0, 0); opacity: 0; }
+  55% { opacity: 1; }
+  100% { transform: translate(-5px, 8px); opacity: 0; }
+}
+
+@keyframes ns-broom {
+  0%, 100% { transform: rotate(-12deg); }
+  50% { transform: rotate(14deg); }
+}
+
+@keyframes ns-sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+
+@keyframes ns-dust {
+  0%, 45% { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  60% { opacity: 0.8; }
+  100% { transform: translate(-9px, -5px) scale(1.5); opacity: 0; }
+}
+
+@keyframes ns-gear {
+  to { transform: rotate(360deg); }
+}
+
+.nav-iris .ns-bob { animation: ns-bob 1600ms ease-in-out infinite; }
+
+.nav-iris .ns-wave { transform-origin: 49px 32px; animation: ns-wave 1400ms ease-in-out infinite; }
+
+.nav-iris .ns-lens { transform-origin: 52px 38px; animation: ns-lens 2600ms ease-in-out infinite; }
+.nav-iris[data-scene="hanap"] .iris-eyes { animation: ns-scan 2600ms ease-in-out infinite; }
+
+.nav-iris .ns-lean { transform-origin: 28px 56px; animation: ns-lean 2400ms ease-in-out infinite; }
+.nav-iris .ns-pencil { transform: translate(14px, 49px); transform-origin: 0 0; animation: ns-pencil 2400ms linear infinite; }
+.nav-iris .ns-line { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.nav-iris .ns-line-1 { animation: ns-line-1 2400ms linear infinite; }
+.nav-iris .ns-line-2 { animation: ns-line-2 2400ms linear infinite; }
+.nav-iris .ns-line-3 { animation: ns-line-3 2400ms linear infinite; }
+
+.nav-iris .ns-jog { animation: ns-jog 360ms ease-in-out infinite; }
+.nav-iris[data-scene="kilos"] .iris-foot-l { animation: ns-step 360ms ease-in-out infinite; }
+.nav-iris[data-scene="kilos"] .iris-foot-r { animation: ns-step 360ms ease-in-out 180ms infinite; }
+.nav-iris .ns-swing-a { transform-origin: 7px 32px; animation: ns-swing 360ms ease-in-out infinite; }
+.nav-iris .ns-swing-b { transform-origin: 49px 32px; animation: ns-swing 360ms ease-in-out 180ms infinite reverse; }
+.nav-iris .ns-belt { animation: ns-belt 420ms linear infinite; }
+.nav-iris .ns-sweat { animation: ns-sweat 1500ms ease-in infinite; }
+
+.nav-iris .ns-broom { transform-origin: 57px 13px; animation: ns-broom 800ms ease-in-out infinite; }
+.nav-iris .ns-sway { transform-origin: 28px 56px; animation: ns-sway 800ms ease-in-out infinite; }
+.nav-iris .ns-dust { transform-box: fill-box; transform-origin: center; opacity: 0; animation: ns-dust 800ms ease-out infinite; }
+.nav-iris .ns-dust:nth-child(2) { animation-delay: 120ms; }
+.nav-iris .ns-dust:nth-child(3) { animation-delay: 240ms; }
+
+.nav-iris .ns-gear { transform-origin: 64px 10px; animation: ns-gear 4s linear infinite; }
+
+/* Home orb */
+@keyframes orb-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1.03); }
+}
 
 /* State to animation mapping (full motion). */
 .iris[data-state="idle"] .iris-body { animation: iris-breathe 3200ms ease-in-out infinite; }
@@ -268,7 +509,7 @@
 .iris[data-state="searching"] .iris-body { animation: iris-squish 700ms ease-in-out infinite; }
 .iris[data-state="searching"] .iris-eyes { transform-box: fill-box; animation: iris-scan 900ms ease-in-out infinite; }
 .iris[data-state="found"] .iris-wrap { animation: iris-pause 160ms var(--ease-settle) both; }
-.iris[data-state="celebrating"] .iris-wrap { animation: iris-hop 520ms var(--ease-settle) 2; }
+.iris[data-state="celebrating"] .iris-wrap { animation: iris-hop 520ms var(--ease-settle) 560ms 2; }
 .iris[data-state="thinking"] .iris-body { animation: iris-breathe 2400ms ease-in-out infinite; }
 .iris[data-state="planning"] .iris-body { animation: iris-breathe 2400ms ease-in-out infinite; }
 .iris[data-state="waiting-for-approval"] .iris-wrap { animation: iris-lean 1600ms ease-in-out 2; }
@@ -281,8 +522,9 @@
 :root[data-motion="subtle"] .iris[data-boil="true"] .iris-wrap { animation: none; }
 :root[data-motion="subtle"] .iris[data-state="celebrating"] .iris-wrap { animation: iris-pause 200ms var(--ease-settle) both; }
 :root[data-motion="subtle"] .iris[data-state="searching"] .iris-body { animation: none; }
-:root[data-motion="subtle"] .iris-shape,
-:root[data-motion="subtle"] .iris-ring { animation-duration: 1ms; }
+:root[data-motion="subtle"] .iris-shape { animation-duration: 1ms; }
+/* Subtle: rail scenes keep moving, but slowly. */
+:root[data-motion="subtle"] .nav-iris * { animation-duration: 3s !important; }
 
 /* No decorative motion: everything settles to its final frame. */
 :root[data-motion="none"] *,
@@ -311,6 +553,8 @@
 
 /* Pause everything decorative while the window is hidden. */
 :root.is-hidden .iris *,
+:root.is-hidden .nav-iris *,
+:root.is-hidden .hero-orb::before,
 :root.is-hidden .skeleton {
   animation-play-state: paused !important;
 }

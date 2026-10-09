@@ -134,6 +134,8 @@ def _public(s: dict, i: int) -> dict:
 def answer(con, question: str) -> dict:
     timings = {}
     t0 = time.perf_counter()
+    from .scan import note_query
+    note_query()
     sources, res = top_chunks(con, question, 6)
     timings.update(res["timings"])
     timings["retrieve"] = round((time.perf_counter() - t0) * 1000 - timings.get("parse", 0), 1)
@@ -152,6 +154,7 @@ def answer(con, question: str) -> dict:
         base["model"] = llm.vision_model()
     system = SYSTEM + ("\nThe attached image is the first image source; state only what it visibly shows."
                        if images else "")
+    note_query()  # keep the GPU free for the answer
     raw = llm.chat(system, f"Sources:\n\n{_source_block(sources)}\n\nQuestion: {question}", temperature=0.1,
                    images=images)
     timings["generate"] = round((time.perf_counter() - t1) * 1000, 1)

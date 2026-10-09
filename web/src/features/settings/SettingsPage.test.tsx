@@ -32,7 +32,7 @@ describe("Settings: theme, motion and Iris customization", () => {
 
   it("motion setting is applied and the system preference can win", async () => {
     render(<App backend={fakeBackend()} startup={false} />);
-    await userEvent.click(screen.getByRole("radio", { name: /No decorative motion/ }));
+    await userEvent.click(within(screen.getByRole("radiogroup", { name: "Animation" })).getByRole("radio", { name: "Off" }));
     expect(document.documentElement.dataset.motion).toBe("none");
     expect(stored().motion).toBe("none");
   });
@@ -59,7 +59,7 @@ describe("Settings: theme, motion and Iris customization", () => {
     const backend = fakeBackend();
     render(<App backend={backend} startup={false} />);
     await userEvent.click(screen.getByRole("button", { name: /Customize Iris/ }));
-    await userEvent.click(await screen.findByRole("button", { name: "Ah, kita ko na!" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Found" }));
     expect(backend.search).not.toHaveBeenCalled();
     expect(backend.ask).not.toHaveBeenCalled();
     await act(async () => { await new Promise((r) => setTimeout(r, 50)); });

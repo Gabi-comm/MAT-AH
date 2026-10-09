@@ -27,7 +27,7 @@ export const PREFS_KEY = "matah.prefs.v1";
 
 export const DEFAULT_PREFS: Preferences = {
   version: 1,
-  theme: "system",
+  theme: "dark",
   motion: "full",
   followSystemMotion: true,
   iris: { preset: "classic", accessory: "none", expression: "classic", visible: true },
@@ -36,7 +36,7 @@ export const DEFAULT_PREFS: Preferences = {
 const THEMES: ThemePref[] = ["light", "dark", "system"];
 const MOTIONS: MotionPref[] = ["full", "subtle", "none"];
 const PRESETS: IrisPresetId[] = ["classic", "ube", "mint", "midnight", "peach", "sunshine", "rose"];
-const ACCESSORIES: IrisAccessory[] = ["none", "glasses", "headphones", "gradcap", "beanie", "bowtie", "headband"];
+const ACCESSORIES: IrisAccessory[] = ["none", "glasses", "headphones", "gradcap", "beanie", "bowtie", "headband", "detective"];
 const EXPRESSIONS: IrisExpression[] = ["classic", "cheerful", "curious", "calm"];
 
 function pick<T>(v: unknown, allowed: readonly T[], fallback: T): T {

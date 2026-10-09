@@ -50,12 +50,12 @@ p {
 }
 
 a {
-  color: var(--accent-primary);
+  color: var(--accent-primary-text);
   text-underline-offset: 3px;
 }
 
 a:hover {
-  color: var(--accent-primary-hover);
+  color: var(--text-primary);
 }
 
 button,

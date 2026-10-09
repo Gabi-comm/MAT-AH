@@ -79,7 +79,7 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
           : "";
 
   return (
-    <AppShell page="hanap" title="Hanap" eyebrow="Find by what you remember">
+    <AppShell page="hanap" title="Hanap">
       <form className={`seam-field${loading ? " is-busy" : ""}`} onSubmit={submit} role="search" aria-busy={loading}>
         <Icon name="search" size={20} />
         <label htmlFor="hanap-q" className="sr-only">
@@ -110,7 +110,6 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
 
       {parsed && search.status !== "loading" && (
         <div className="row wrap gap-2" aria-label="How MAT-AH read your search">
-          <span className="subtle" style={{ fontSize: 13 }}>Naintindihan ko:</span>
           {parsed.kinds.map((k) => (
             <span key={k} className="tag tag-violet">
               {kindLabel(k)}
@@ -183,9 +182,6 @@ export function HanapPage({ q, navigate }: { q: string; navigate: (p: Page, para
                 {kindLabel(k)} · {n}
               </button>
             ))}
-            <span className="subtle" style={{ fontSize: 13, marginLeft: 8 }}>
-              Sorted by relevance
-            </span>
             <div className="segmented" role="radiogroup" aria-label="View" style={{ marginLeft: "auto" }}>
               <button role="radio" aria-checked={view === "grid"} aria-label="Grid view" onClick={() => setView("grid")}>
                 <Icon name="grid" />

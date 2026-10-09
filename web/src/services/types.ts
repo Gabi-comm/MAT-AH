@@ -117,7 +117,7 @@ export interface RootFolder {
   name: string;
 }
 
-export type IndexPhase = "idle" | "listing" | "reading" | "seeing" | "embedding" | "describing" | "done";
+export type IndexPhase = "idle" | "listing" | "reading" | "seeing" | "listening" | "embedding" | "describing" | "done";
 
 /** GET /api/index/status, POST /api/index, POST /api/index/stop */
 export interface IndexProgress {

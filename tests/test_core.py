@@ -27,6 +27,7 @@ def demo(tmp_path_factory):
     llm.available = lambda: False
     llm.vision_model = lambda: None
     visual.ready = lambda: False
+    visual.installed = lambda: False  # no CLIP load in unit tests
     winsearch.available = lambda: False
     con = connect(base / "test.db")
     folders.add_root(con, str(out))

@@ -5,7 +5,7 @@ describe("preferences", () => {
   it("falls back to defaults for corrupt or unknown values", () => {
     expect(sanitize(null)).toEqual(DEFAULT_PREFS);
     const p = sanitize({ theme: "neon", motion: 3, iris: { preset: "robot", accessory: "glasses" } });
-    expect(p.theme).toBe("system");
+    expect(p.theme).toBe("dark");
     expect(p.motion).toBe("full");
     expect(p.iris.preset).toBe("classic");
     expect(p.iris.accessory).toBe("glasses");

@@ -41,6 +41,8 @@ def connect(path: Path | None = None) -> sqlite3.Connection:
     cols = {r[1] for r in con.execute("PRAGMA table_info(files)")}
     if "described" not in cols:  # vision-model caption done (0/1)
         con.execute("ALTER TABLE files ADD COLUMN described INT DEFAULT 0")
+    if "heard" not in cols:  # speech transcribed (0/1), for video and audio
+        con.execute("ALTER TABLE files ADD COLUMN heard INT DEFAULT 0")
     return con
 
 

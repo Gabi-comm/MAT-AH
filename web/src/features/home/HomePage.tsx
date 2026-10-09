@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "../../components/layout/AppShell";
 import { Skeleton } from "../../components/feedback/Feedback";
-import { Icon } from "../../components/Icon";
+import { Icon, type IconName } from "../../components/Icon";
 import { useStatus } from "../../hooks/StatusContext";
 import { hrefFor, type Page } from "../../hooks/useRoute";
 import { IrisCompanion } from "../../mascot/IrisCompanion";
@@ -14,6 +14,13 @@ function greeting(): string {
   const h = new Date().getHours();
   return h < 12 ? "Magandang umaga" : h < 18 ? "Magandang hapon" : "Magandang gabi";
 }
+
+const QUICK: { page: Page; title: string; line: string; icon: IconName }[] = [
+  { page: "hanap", title: "Hanap", line: "Find a file by what you remember", icon: "search" },
+  { page: "sagot", title: "Sagot", line: "Answers with sources", icon: "ask" },
+  { page: "kilos", title: "Kilos", line: "Organize into folders", icon: "organize" },
+  { page: "linis", title: "Linis", line: "Clear duplicates", icon: "clean" },
+];
 
 export function HomePage({ navigate }: { navigate: (p: Page, params?: Record<string, string>) => void }) {
   const backend = useBackend();
@@ -41,18 +48,18 @@ export function HomePage({ navigate }: { navigate: (p: Page, params?: Record<str
   const totalFiles = status ? Object.values(status.files).reduce((a, b) => a + b, 0) : 0;
 
   return (
-    <AppShell page="home" title="Home" eyebrow="MAT-AH · Hanap. Kita. Sagot. Kilos." showCompanion={false}>
+    <AppShell page="home" title="Home" showCompanion={false}>
       <section className="hero" aria-labelledby="home-h">
-        <div className="hero-head">
-          <div className="stack gap-2">
-            <span className="muted">{greeting()}.</span>
-            <h1 id="home-h">Ano'ng hinahanap mo?</h1>
-          </div>
-          <IrisCompanion size={84} />
+        <div className="hero-orb">
+          <IrisCompanion size={76} />
+        </div>
+        <div className="stack gap-2">
+          <span className="greet">{greeting()}</span>
+          <h1 id="home-h">Ano'ng hinahanap mo?</h1>
         </div>
 
         <form className="seam-field lg" onSubmit={submit} role="search">
-          <Icon name="search" size={22} />
+          <Icon name="search" size={20} />
           <label htmlFor="home-q" className="sr-only">
             {mode === "hanap" ? "Describe a file to find" : "Ask a question about your files"}
           </label>
@@ -60,7 +67,7 @@ export function HomePage({ navigate }: { navigate: (p: Page, params?: Record<str
             id="home-q"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={mode === "hanap" ? 'Ilarawan ang file: "screenshot ng GCash receipt na ₱1,500"' : 'Magtanong: "Kailan ang deadline ng enrollment?"'}
+            placeholder={mode === "hanap" ? '"GCash receipt na ₱1,500"' : '"Kailan ang deadline ng enrollment?"'}
             autoComplete="off"
           />
           <div className="segmented" role="radiogroup" aria-label="Mode">
@@ -76,36 +83,34 @@ export function HomePage({ navigate }: { navigate: (p: Page, params?: Record<str
           </button>
           <span className="seam-line" aria-hidden="true" />
         </form>
-        <div className="row wrap gap-3" style={{ justifyContent: "space-between", fontSize: 13 }}>
-          <span className="subtle">
-            {mode === "hanap"
-              ? "Hanap finds your real files. Results are never generated."
-              : "Sagot answers only from your files, with a source for every claim."}
-          </span>
-          <span className="mono subtle">Enter to run</span>
-        </div>
-
       </section>
+
+      <nav className="quick-grid reveal-stagger" aria-label="Sections">
+        {QUICK.map((x) => (
+          <a key={x.page} className="glass quick" href={hrefFor(x.page)}>
+            <span className="quick-ic" aria-hidden="true">
+              <Icon name={x.icon} />
+            </span>
+            <strong>{x.title}</strong>
+            <span>{x.line}</span>
+          </a>
+        ))}
+      </nav>
 
       <section className="grid-auto-wide" aria-label="Workspace status">
         <div className="card stack gap-3">
           <div className="row" style={{ justifyContent: "space-between" }}>
-            <h2 className="card-title">Authorized folders</h2>
-            <a href={hrefFor("settings")} style={{ fontSize: 14 }}>
+            <h2 className="card-title">Folders</h2>
+            <a href={hrefFor("settings")} style={{ fontSize: 13 }}>
               Manage
             </a>
           </div>
           {roots === null && !rootsErr && <Skeleton h={60} />}
-          {rootsErr && <p className="subtle" style={{ fontSize: 14 }}>Folders unavailable until the backend is running.</p>}
+          {rootsErr && <p className="subtle" style={{ fontSize: 14 }}>Unavailable until the backend is running.</p>}
           {roots && roots.length === 0 && (
-            <div className="stack gap-3">
-              <p className="muted" style={{ fontSize: 14 }}>
-                Wala pang folder. Choose the folders MAT-AH may read. Nothing outside them is ever opened.
-              </p>
-              <a className="btn btn-primary" href={hrefFor("settings")} style={{ alignSelf: "flex-start" }}>
-                <Icon name="plus" /> Pumili ng folder
-              </a>
-            </div>
+            <a className="btn btn-primary" href={hrefFor("settings")} style={{ alignSelf: "flex-start" }}>
+              <Icon name="plus" /> Pumili ng folder
+            </a>
           )}
           {roots && roots.length > 0 && (
             <ul className="list-plain">
@@ -127,7 +132,7 @@ export function HomePage({ navigate }: { navigate: (p: Page, params?: Record<str
           <h2 className="card-title">System</h2>
           {statusError && (
             <div className="status-line">
-              <Icon name="alert" className="err-ic" /> Backend not reachable. Start MAT-AH's server, then refresh.
+              <Icon name="alert" className="err-ic" /> Backend not reachable
             </div>
           )}
           {!status && !statusError && <Skeleton h={60} />}
@@ -135,7 +140,7 @@ export function HomePage({ navigate }: { navigate: (p: Page, params?: Record<str
             <>
               <div className="status-line">
                 <Icon name={status.ollama ? "check" : "alert"} className={status.ollama ? "ok-ic" : "warn-ic"} />
-                {status.ollama ? "Local AI ready" : "Local AI offline: search still works, answers are limited"}
+                {status.ollama ? "Local AI ready" : "Local AI offline"}
                 {status.chat_model && <span className="meta">{status.chat_model}</span>}
               </div>
               <div className="status-line">
@@ -145,7 +150,7 @@ export function HomePage({ navigate }: { navigate: (p: Page, params?: Record<str
               </div>
               <div className="status-line">
                 <Icon name="lock" />
-                No cloud. Files stay on this computer.
+                Files stay on this computer
                 <span className="meta">{status.online ? "online" : "offline"}</span>
               </div>
               {(() => {

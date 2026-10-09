@@ -69,13 +69,14 @@ export function paletteFor(id: IrisPresetId, theme: "light" | "dark"): IrisPalet
 }
 
 export const ACCESSORY_LABELS = {
-  none: "Wala",
+  none: "None",
   glasses: "Tiny glasses",
   headphones: "Headphones",
   gradcap: "Graduation cap",
   beanie: "Mini beanie",
   bowtie: "Bow tie",
   headband: "Headband",
+  detective: "Detective hat",
 } as const;
 
 export const EXPRESSION_LABELS = {

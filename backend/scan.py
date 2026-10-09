@@ -43,6 +43,17 @@ progress = {"running": False, "phase": "idle", "listed": 0, "total": 0, "done": 
             "embed_skipped": False, "stop": False}
 _run_lock = threading.Lock()
 _write_lock = threading.Lock()  # one writer at a time across the indexer and on-demand reads
+_last_query = [0.0]
+
+
+def note_query() -> None:
+    """A person is searching or asking: background indexing steps aside for a moment."""
+    _last_query[0] = time.time()
+
+
+def _yield_to_queries(quiet_s: float = 4.0) -> None:
+    while time.time() - _last_query[0] < quiet_s and not progress["stop"]:
+        time.sleep(0.25)
 
 
 def _err(msg: str) -> None:
@@ -215,9 +226,8 @@ def read_file(con, fid: int, embed: bool | None = None) -> bool:
                 txt, _ = ocr_image(np.asarray(im))
                 if len(txt) > 15:
                     units.append({"text": txt, "locator": {"t": t}})
-            units += media.transcribe(p)
-        elif kind == "audio":
-            units = media.transcribe(p)
+        elif kind == "audio":  # speech comes later, in the listening phase
+            units = []
         elif kind == "image" and in_bulk(p):  # dataset image: it gets seen (CLIP), not read (OCR)
             units = []
         else:
@@ -324,17 +334,26 @@ def read_queue(con) -> None:
     order = " ".join(f"WHEN '{k}' THEN {v}" for k, v in READ_ORDER.items())
     rows = con.execute(f"SELECT id, path, kind FROM files WHERE status='queued' "
                        f"ORDER BY CASE kind {order} ELSE 9 END, mtime DESC").fetchall()
-    ids = [r[0] for r in rows if not in_bulk(r[1])] + [r[0] for r in rows if in_bulk(r[1])]
-    progress.update(phase="reading", total=len(ids), done=0)
+    personal = [r[0] for r in rows if not in_bulk(r[1]) and r[2] not in ("video", "audio")]
+    media_ids = [r[0] for r in rows if not in_bulk(r[1]) and r[2] in ("video", "audio")]
+    bulk = [r[0] for r in rows if in_bulk(r[1])]
     embed = llm.embed_available()
     progress["embed_skipped"] = not embed
-    for fid in ids:
-        if progress["stop"]:
-            return
-        r = con.execute("SELECT name FROM files WHERE id=?", (fid,)).fetchone()
-        progress["current"] = r[0] if r else ""
-        read_file(con, fid, embed)
-        progress["done"] += 1
+    # Order matters for how soon search gets good: your documents and photos, then sight for those
+    # photos, then video keyframes; dataset images last. Speech has its own later phase (listening).
+    for stage in (personal, "see", media_ids, bulk):
+        if stage == "see":
+            backfill_visual(con)
+            continue
+        progress.update(phase="reading", total=len(stage), done=0)
+        for fid in stage:
+            if progress["stop"]:
+                return
+            r = con.execute("SELECT name FROM files WHERE id=?", (fid,)).fetchone()
+            progress["current"] = r[0] if r else ""
+            _yield_to_queries()
+            read_file(con, fid, embed)
+            progress["done"] += 1
 
 
 # ---------------------------------------------------------------- phases 3-5
@@ -369,6 +388,37 @@ def backfill_embeddings(con) -> None:
         progress["done"] += len(items)
 
 
+def listen_media(con) -> None:
+    """Speech in videos and audio, shortest files first, so many files become searchable early."""
+    if not media.whisper_installed():
+        return
+    rows = con.execute("""SELECT id, path FROM files WHERE kind IN ('video','audio') AND status='ok' AND heard=0
+                          ORDER BY size""").fetchall()
+    progress.update(phase="listening", total=len(rows), done=0)
+    embed = llm.embed_available()
+    for r in rows:
+        if progress["stop"]:
+            return
+        p = Path(r["path"])
+        _yield_to_queries()
+        progress["current"] = p.name
+        try:
+            units = media.transcribe(p)
+            items = []
+            if units:
+                with _write_lock:
+                    items = _store_chunks(con, r["id"], p, chunk(p, "audio", units))
+            with _write_lock:
+                con.execute("UPDATE files SET heard=1 WHERE id=?", (r["id"],))
+            if embed and items:
+                embed_chunks(con, items, name_words(p))
+        except Exception as e:
+            _err(f"listen {p.name}: {e}")
+            with _write_lock:
+                con.execute("UPDATE files SET heard=-1 WHERE id=?", (r["id"],))
+        progress["done"] += 1
+
+
 def backfill_visual(con) -> None:
     """CLIP vectors for images/videos read before the visual model was available."""
     if not visual.installed():
@@ -384,6 +434,7 @@ def backfill_visual(con) -> None:
     for r in rows:
         if progress["stop"]:
             return
+        _yield_to_queries()
         progress["current"] = Path(r["path"]).name
         try:
             if r["kind"] == "image":
@@ -414,6 +465,7 @@ def describe_images(con, limit: int = CAPTION_LIMIT) -> None:
         if progress["stop"]:
             return
         p = Path(r["path"])
+        _yield_to_queries()
         progress["current"] = p.name
         try:
             text = llm.describe_image(p, CAPTION_PROMPT)
@@ -439,7 +491,7 @@ def run(con) -> dict:
                         seen=0, described=0, done=0, total=0)
         with _write_lock:  # a read cut off by a crash or restart goes back in the queue
             con.execute("UPDATE files SET status='queued' WHERE status='reading'")
-        steps = [list_files, read_queue, backfill_visual, backfill_embeddings, describe_images]
+        steps = [list_files, read_queue, backfill_visual, listen_media, backfill_embeddings, describe_images]
         for step in steps:
             if progress["stop"]:
                 break

@@ -3,6 +3,7 @@ import { MatahSymbol, MatahWordmark } from "../../branding/MatahLogo";
 import { useStatus } from "../../hooks/StatusContext";
 import { hrefFor, type Page } from "../../hooks/useRoute";
 import { IrisCompanion } from "../../mascot/IrisCompanion";
+import { NavIris } from "../../mascot/NavIris";
 import { usePrefs } from "../../prefs/PrefsContext";
 import { useBackend } from "../../services/BackendContext";
 import { indexPhaseText, plural } from "../../services/normalize";
@@ -24,11 +25,22 @@ const ACT: NavDef[] = [
   { page: "linis", label: "Linis", en: "Clean up", icon: "clean" },
 ];
 
+/** Active item: Iris acts out the section. Inactive (or Iris hidden): the plain icon. */
+function NavMark({ page, icon, on }: { page: Page; icon: IconName; on: boolean }) {
+  const { prefs } = usePrefs();
+  if (!on || !prefs.iris.visible) return <Icon name={icon} />;
+  return (
+    <span className="nav-scene" aria-hidden="true">
+      <NavIris page={page} />
+    </span>
+  );
+}
+
 function NavLink({ def, current }: { def: NavDef; current: Page }) {
   const on = current === def.page;
   return (
     <a className="nav-item" href={hrefFor(def.page)} aria-current={on ? "page" : undefined}>
-      {on ? <span className="nav-seam" aria-hidden="true" /> : <Icon name={def.icon} />}
+      <NavMark page={def.page} icon={def.icon} on={on} />
       {def.label}
       {def.en && <span className="en">{def.en}</span>}
     </a>
@@ -37,7 +49,6 @@ function NavLink({ def, current }: { def: NavDef; current: Page }) {
 
 function RailStatus() {
   const { status, index, error } = useStatus();
-  const backend = useBackend();
   const files = status ? Object.values(status.files).reduce((a, b) => a + b, 0) : 0;
   let line = "Checking local services…";
   let dot = "";
@@ -59,8 +70,7 @@ function RailStatus() {
           {index?.running ? indexPhaseText(index) : `${plural(files, "file")} indexed`}
         </div>
       )}
-      {status && <div className="line">{status.online ? "Internet on · not used" : "Offline · works anyway"}</div>}
-      {backend.isDemo && <span className="demo-badge" style={{ alignSelf: "flex-start" }}>DEMO DATA</span>}
+
     </div>
   );
 }
@@ -83,12 +93,12 @@ function ThemeToggle() {
 export function AppShell({
   page,
   title,
-  eyebrow,
   children,
   showCompanion = true,
 }: {
   page: Page;
   title: string;
+  /** Kept for call-site compatibility; the topbar no longer shows it. */
   eyebrow?: string;
   children: ReactNode;
   showCompanion?: boolean;
@@ -103,18 +113,15 @@ export function AppShell({
         <a className="rail-brand" href={hrefFor("home")} aria-label="MAT-AH home">
           <span className="row gap-2">
             <MatahSymbol size={30} tone="light" />
-            <MatahWordmark height={17} style={{ color: "#F6F3EF" }} />
+            <MatahWordmark height={17} style={{ color: "#F4F0F7" }} />
           </span>
         </a>
-        <a className="nav-item" href={hrefFor("home")} aria-current={page === "home" ? "page" : undefined}>
-          {page === "home" ? <span className="nav-seam" aria-hidden="true" /> : <Icon name="home" />}
-          Home
-        </a>
-        <div className="rail-group">DISCOVER</div>
+        <NavLink def={{ page: "home", label: "Home", icon: "home" }} current={page} />
+        <div className="rail-group">Discover</div>
         {DISCOVER.map((d) => (
           <NavLink key={d.page} def={d} current={page} />
         ))}
-        <div className="rail-group">ACT · NEEDS YOUR OK</div>
+        <div className="rail-group">Act</div>
         {ACT.map((d) => (
           <NavLink key={d.page} def={d} current={page} />
         ))}
@@ -123,11 +130,8 @@ export function AppShell({
       </nav>
       <div className="main">
         <header className="topbar">
-          <div className="topbar-title">
-            {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-            <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 20 }}>{title}</span>
-          </div>
-          {backend.isDemo && <span className="demo-badge">DEMO DATA · NOT YOUR FILES</span>}
+          <div className="topbar-title">{title}</div>
+          {backend.isDemo && <span className="demo-badge">Demo data</span>}
           <div className="row gap-2" style={{ marginLeft: "auto", alignItems: "flex-end" }}>
             {showCompanion && <IrisCompanion />}
             <ThemeToggle />

@@ -158,6 +158,8 @@ export function indexPhaseText(p: { phase?: string; listed?: number; done: numbe
       return `Reading files · ${n(p.done)} of ${n(p.total)}`;
     case "seeing":
       return p.total ? `Looking at pictures and videos · ${n(p.done)} of ${n(p.total)}` : "Loading the visual model…";
+    case "listening":
+      return `Listening to videos and audio · ${n(p.done)} of ${n(p.total)}`;
     case "embedding":
       return `Learning meaning · ${n(p.done)} of ${n(p.total)}`;
     case "describing":
