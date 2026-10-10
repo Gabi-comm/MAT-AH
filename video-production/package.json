@@ -1,0 +1,25 @@
+{
+  "name": "matah-demo-video",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "remotion studio",
+    "render:seg1": "remotion render Segment1 outputs/segment-01.mp4",
+    "render:seg2": "remotion render Segment2 outputs/segment-02.mp4",
+    "render:seg3": "remotion render Segment3 outputs/segment-03.mp4",
+    "render:full": "remotion render Full outputs/MAT-AH-Hackathon-Demo-60s.mp4",
+    "render:v2": "remotion render FullV2 outputs/MAT-AH-Hackathon-Demo-V2.mp4",
+    "render:v3": "remotion render FullV3 outputs/MAT-AH-Hackathon-Demo-V3.mp4"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "remotion": "4.0.290",
+    "@remotion/cli": "4.0.290"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "typescript": "~5.8.3"
+  }
+}
